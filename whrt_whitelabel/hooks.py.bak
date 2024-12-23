@@ -73,7 +73,7 @@ app_include_js = "/assets/whrt_whitelabel/js/whrt_whitelabel.js"
 # }
 website_context = {
     "favicon": frappe.db.get_single_value('Navbar Settings', 'app_logo') or "/assets/whrt_whitelabel/images/login_logo.jpg",
-    "splash_image": frappe.db.get_single_value('Navbar Settings', 'app_logo') or "/assets/whrt_whitelabel/images/login_logo.jpg"
+    "splash_image": frappe.db.get_single_value('Website Settings', 'app_logo') or "/assets/whrt_whitelabel/images/login_logo.jpg"
 }
 
 

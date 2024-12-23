@@ -1,0 +1,69 @@
+{% extends "frappe/www/login.html" %}
+
+{% block head_include %}
+  <!-- Include the custom CSS file -->
+  <link rel="stylesheet" href="{{ '/assets/whrt_whitelabel/css/whrt_whitelabel.css' }}">
+  
+{% endblock %}
+
+{% block page_content %}
+
+    {% macro logo_section(title=null) %}
+	
+    <div class="page-card-head">
+        <!-- Reference to the logo image -->
+         <img class="app-logo" src="{{ frappe.db.get_single_value('Website Settings', 'app_logo') or '/assets/whrt_whitelabel/images/login_logo.jpg' }}" alt="Login Logo">
+
+
+        {% if title %}
+        <h4>{{ _(title) }}</h4>
+        {% else %}
+        <h4>{{ _('Login to {0}').format("Parvarthak") }}</h4>
+        {% endif %}
+    </div>
+    {% endmacro %}
+
+    {{ logo_section() }}
+
+    <!-- Include the rest of the login content -->
+    <div class="login-content page-card">
+        <form class="form-signin form-login" role="form">
+            {{ email_login_body() }}
+        </form>
+    </div>
+
+{% endblock %}
+
+{% block footer %}
+    <footer class="web-footer">
+        <div class="container">
+            <div class="footer-logo-extension">
+                <div class="row">
+                    <div class="text-left col-md-6"></div>
+                    <div class="text-right col-md-6">
+                        <div class="input-group">
+                            <input aria-describedby="footer-subscribe-button" aria-label="Your email address..." class="form-control" id="footer-subscribe-email" placeholder="Your email address..." type="text" fdprocessedid="m4tprd">
+                            <div class="input-group-append">
+                                <button class="btn btn-sm btn-secondary pl-3 pr-3 ml-2" id="footer-subscribe-button" type="button" fdprocessedid="4f1l0i">Get Updates</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="footer-links">
+                <div class="row">
+                    <div class="footer-col-left col-sm-6"></div>
+                    <div class="footer-col-right col-sm-6"></div>
+                </div>
+            </div>
+            <div class="footer-info">
+                <div class="row">
+                    <div class="footer-col-left col-sm-6 col-12"></div>
+                    <div class="footer-col-right col-sm-6 col-12 footer-powered">
+                        Powered by <a class="text-muted" href="https://whiteraystech.in/" target="_blank">WhiteRaysTechnology</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+{% endblock %}

@@ -1,0 +1,124 @@
+.for-login .page-card, .for-forgot .page-card, .for-login-with-email-link .page-card, .for-signup .page-card, .for-email-login .page-card {
+    background-color: rgb(235, 239, 234) !important;
+    max-width: 50%;
+    padding: 45px 10px;
+    margin: 0px auto;
+    border-radius: var(--border-radius-md);
+    border: 1px solid var(--border-color);
+}
+ 
+.navbar-light {
+    border-bottom: 1px solid rgb(226, 226, 226);
+    background: rgb(160, 86, 86);
+}
+ 
+body{
+    background-color: rgb(198, 235, 197) !important;
+    
+}
+ 
+li.dropdown.dropdown.dropdown-help.dropdown-mobile {
+	display: none!important;
+}
+
+.page-card-head {
+    text-align: center;
+    margin-bottom: 30px;
+    
+}
+
+.page-card-head h4 {
+    margin-top: 1rem;
+    font-size: var(--text-xl);
+    font-weight: var(--weight-semibold);
+    letter-spacing: 0.01em;
+    color: black !important;
+    display: center !important;
+    text-align: center;
+}
+ 
+.for-login .page-card .page-card-body .forgot-password-message > *, .for-forgot .page-card .page-card-body .forgot-password-message > *, .for-login-with-email-link .page-card .page-card-body .forgot-password-message > *, .for-signup .page-card .page-card-body .forgot-password-message > *, .for-email-login .page-card .page-card-body .forgot-password-message > * {
+    color: black !important;
+    font-size: var(--text-sm);
+    font-weight: var(--weight-regular);
+    letter-spacing: 0.02em;
+}
+ 
+.navbar-light .navbar-brand {
+    color: rgb(255 255 255) !important;
+}
+ 
+.text-muted {
+    color: black !important;
+}
+ 
+.btn.btn-primary {
+    background-color: #586a53;
+    color: #fdfdfd;
+    white-space: nowrap;
+    --icon-stroke: rgb(255 254 254);
+    --icon-fill-bg: #000000;
+}
+ 
+.for-login .page-card .page-card-body .password-field .toggle-password {
+    color: black !important;
+}
+ 
+.sidebar-item a{
+    color: black !important;
+}
+ 
+.my-account-header {
+    color: black !important;
+}
+ 
+.standard-sidebar-item.selected .sidebar-item-label.selected {
+    color: black !important;
+}
+ 
+.web-footer {
+    padding: 3rem 0;
+    min-height: 140px;
+    background-color: #c6ebc5 !important;
+    border-top: 1px solid #e2e2e2;
+    margin-top: 40px;
+}
+ 
+.footer-info {
+    color: black !important;
+    font-size: .875rem;
+}
+ 
+.account-info {
+    background-color: rgb(175, 210, 166);
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius-md);
+    padding: var(--padding-sm) 25px;
+}
+
+
+
+.app-logo {
+    width: 150px;
+    height: auto;
+    margin-bottom: 20px;
+}
+
+.login-content {
+    max-width: 380px;
+    margin: 0 auto;
+    background-color: white;
+    padding: 30px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+    .login-content {
+        padding: 20px;
+    }
+
+    .web-footer {
+        padding: 20px 0;
+    }
+}
