@@ -102,7 +102,7 @@ after_migrate = ['whrt_whitelabel.api.whitelabel_patch']
 
 # before_install = "whrt_whitelabel.install.before_install"
 # after_install = "whrt_whitelabel.install.after_install"
-after_install = "whrt_whitelabel.whrt_whitelabel.setup.install.setup_login_page"
+after_install = "setup.install.setup_login_page"
 
 # Uninstallation
 # ------------
