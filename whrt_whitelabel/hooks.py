@@ -84,9 +84,9 @@ after_migrate = ['whrt_whitelabel.api.whitelabel_patch']
 
 # automatically create page for each record of this doctype
 # website_generators = ["Web Page"]
-override_whitelisted_methods = {
-    "frappe.desk.page.setup_wizard.setup_wizard.setup_demo": "whrt_whitelabel.whrt_whitelabel.demo_data.generate_demo_data"
-}
+#override_whitelisted_methods = {
+    #"frappe.desk.page.setup_wizard.setup_wizard.setup_demo": "whrt_whitelabel.whrt_whitelabel.demo_data.generate_demo_data"
+#}
 
 # automatically load and sync documents of this doctype from downstream apps
 # importable_doctypes = [doctype_1]
@@ -105,7 +105,10 @@ override_whitelisted_methods = {
 
 # before_install = "whrt_whitelabel.install.before_install"
 # after_install = "whrt_whitelabel.install.after_install"
-after_install = "setup.install.setup_login_page"
+after_install = [
+    "setup.install.setup_login_page",  # First function
+    "setup.setup.create_demo_items"  # Second function
+]
 
 # Uninstallation
 # ------------
