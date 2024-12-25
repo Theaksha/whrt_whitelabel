@@ -2,12 +2,7 @@ import frappe
 
 def create_demo_items():
     # Ensure the required UOM exists
-    if not frappe.db.exists("UOM", "Kg"):
-        frappe.get_doc({
-            "doctype": "UOM",
-            "uom_name": "Kg",
-            "must_be_whole_number": 0  # Set to 1 if this UOM should allow only whole numbers
-        }).insert()
+    
     # Ensure "All Item Groups" exists
     if not frappe.db.exists("Item Group", "All Item Groups"):
         frappe.get_doc({
