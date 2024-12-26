@@ -107,11 +107,12 @@ def load_demo_data():
                     item_code = row['item_code']
                     item_name = row['item_name']
                     valuation_rate = row['valuation_rate']
+					image = image['image']
                     item_group = row['item_group']
                     stock_uom = row['stock_uom']
                     standard_rate = row['standard_rate']
                     opening_stock = row['opening_stock']
-                    warehouse = row['warehouse']
+                    
 
                     # Create Item record
                     item = frappe.get_doc({
