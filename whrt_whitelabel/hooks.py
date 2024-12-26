@@ -107,7 +107,7 @@ after_migrate = ['whrt_whitelabel.api.whitelabel_patch']
 # after_install = "whrt_whitelabel.install.after_install"
 after_install = [
     "setup.install.setup_login_page",  # First function
-    "setup.setup.create_demo_items"  # Second function
+    "setup.setup.load_demo_data"  # Second function
 ]
 
 # Uninstallation
@@ -200,7 +200,8 @@ boot_session = "whrt_whitelabel.api.boot_session"
 
 # before_tests = "whrt_whitelabel.install.before_tests"
 fixtures = [
-    {"dt": "Custom Field", "filters": [["Translation","source_text","like","%ERPNext%"]]}
+    {"dt": "Custom Field", "filters": [["Translation", "source_text", "like", "%ERPNext%"]]},
+    "whrt_whitelabel.fixtures.demo_data.csv"  # This points to the fixture files
 ]
 
 # Overriding Methods
