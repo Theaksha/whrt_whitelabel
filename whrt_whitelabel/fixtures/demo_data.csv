@@ -1,5 +1,5 @@
 doctype,item_name,valuation_rate,image,item_group,item_code,stock_uom,standard_rate,opening_stock,warehouse
-Item,Onion (Loose),69.75,https://www.bigbasket.com/media/uploads/p/l/40075537_5-fresho-onion.jpg,Fruits & Vegetables,ITEM001,kg,70,659,Stores
+Item,Onion (Loose),69.75,https://www.bigbasket.com/media/uploads/p/l/40075537_5-fresho-onion.jpg,Fruits & Vegetables,ITEMS001,kg,70,659,Stores
 Item,Onion,174.35,https://www.bigbasket.com/media/uploads/p/l/1201414_1-fresho-onion.jpg,Fruits & Vegetables,ITEM002,kg,174,763,Stores
 Item,Onion (Loose),34.87,https://www.bigbasket.com/media/uploads/p/l/10000148_30-fresho-onion.jpg,Fruits & Vegetables,ITEM003,kg,35,828,Stores
 Item,Onion,69.74,https://www.bigbasket.com/media/uploads/p/l/1201413_1-fresho-onion.jpg,Fruits & Vegetables,ITEM004,kg,70,674,Stores
