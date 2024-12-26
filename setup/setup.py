@@ -1,59 +1,39 @@
+# setup.py
 import frappe
-import json
-import os
 
+def load_demo_data():
+    """Load demo data after the app installation."""
+    print("Loading demo data...")
 
-def create_or_get(name, doctype, filters=None):
-    """Utility function to create or fetch a document."""
-    if not filters:
-        filters = {"name": name}
-    if not frappe.db.exists(doctype, filters):
-        doc = frappe.get_doc({"doctype": doctype, **filters})
-        doc.insert(ignore_permissions=True)
-        frappe.db.commit()
-        print(f"Created {doctype}: {name}")
+    # Import demo data (if needed, you can also use `frappe.get_doc` to do it manually here)
+    demo_data_file = frappe.get_app_path('whrt_whitelabel', 'fixtures', 'demo_data.csv')
+
+    if demo_data_file:
+        print(f"Found demo data file: {demo_data_file}")
+        try:
+            with open(demo_data_file, 'r') as file:
+                # Example of reading and processing CSV file
+                import csv
+                reader = csv.DictReader(file)
+                for row in reader:
+                    item = frappe.get_doc({
+                        "doctype": "Item",
+                        "item_code": row["item_code"],
+                        "item_name": row["item_name"],
+                        "item_group": row["item_group"],
+                        "stock_uom": row["stock_uom"],
+                        "standard_rate": row["standard_rate"],
+                        "image":row["image"],
+                        "valuation_rate": row["valuation_rate"],
+                        "opening_stock": row["opening_stock"],
+                        "warehouse": row["warehouse"]
+                    })
+                    item.insert(ignore_permissions=True)
+                    frappe.db.commit()
+                    print(f"Inserted Item: {item.item_code}")
+
+            print("Demo data imported successfully.")
+        except Exception as e:
+            print(f"Error while importing demo data: {e}")
     else:
-        print(f"{doctype} {name} already exists")
-
-def create_demo_items():
-    """Load and insert demo data from demo/demo_data.json."""
-    app_path = frappe.get_app_path('whrt_whitelabel')
-    demo_data_file = os.path.join(app_path, "demo", "demo_data.json")
-    
-    # List of Item Groups to ensure they exist
-    item_groups = [
-        "Fruits & Vegetables",
-        "Eggs, Meat & Fish",
-        "Foodgrains, Oil & Masala",
-        "Cleaning & Household",
-        "Beverages",
-        "Bakery, Cakes & Dairy",
-        "Snacks & Branded Foods",
-        "Beauty & Hygiene",
-        "Gourmet & World Food",
-        "Kitchen, Garden & Pets",
-        "Baby Care"
-    ]
-    
-    if os.path.exists(demo_data_file):
-        with open(demo_data_file, "r") as f:
-            demo_data = json.load(f)
-        
-        # Ensure all item groups exist
-        for item_group in item_groups:
-            create_or_get(item_group, "Item Group", {"item_group_name": item_group})
-        
-        # Ensure UOM "kg" exists
-        create_or_get("kg", "UOM", {"uom_name": "kg"})
-
-        # Insert items
-        for data in demo_data:
-            try:
-                doc = frappe.get_doc(data)
-                doc.insert(ignore_permissions=True)
-                frappe.db.commit()
-                print(f"Inserted: {doc.name}")
-            except Exception as e:
-                print(f"Failed to insert {data.get('item_code')}: {e}")
-    else:
-        print("demo_data.json not found in demo folder")
+        print("No demo data file found.")
