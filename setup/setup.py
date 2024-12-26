@@ -3,7 +3,7 @@ import csv
 import os
 
 # Utility function to create or fetch a company
-def create_or_get_company(company_name="My Company"):
+def create_or_get_company(company_name="WHRT Company"):
     """Ensure that the company exists."""
     if not frappe.db.exists("Company", company_name):
         company = frappe.get_doc({
@@ -100,13 +100,9 @@ def load_demo_data():
                 create_or_get_price_list("Standard Selling")
                 
                 # Ensure Company is created
-                create_or_get_company("My Company")
                 
-                # Fetch the company object after it is created
-                company = frappe.get_doc("Company", "My Company")
 
-                # Ensure the warehouse is created and linked to the company
-                create_or_get_warehouse("Stores-WH", company.name)
+               
 
                 # Loop through CSV rows and create records in ERPNext
                 for row in reader:
