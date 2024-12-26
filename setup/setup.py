@@ -2,8 +2,9 @@ import frappe
 import csv
 import os
 
+# Utility function to create or fetch a company
 def create_or_get_company(company_name="My Company"):
-    """Utility function to create or fetch a company."""
+    """Ensure that the company exists."""
     if not frappe.db.exists("Company", company_name):
         company = frappe.get_doc({
             "doctype": "Company",
@@ -20,6 +21,7 @@ def create_or_get_company(company_name="My Company"):
     else:
         print(f"Company '{company_name}' already exists.")
 
+# Ensure that an Item Group exists
 def create_or_get_item_group(item_group_name):
     """Ensure that an Item Group exists."""
     if not frappe.db.exists("Item Group", item_group_name):
@@ -32,6 +34,7 @@ def create_or_get_item_group(item_group_name):
         frappe.db.commit()
         print(f"Created Item Group: {item_group_name}")
 
+# Ensure that a UOM (Unit of Measure) exists
 def create_or_get_uom(uom_name):
     """Ensure that a UOM exists."""
     if not frappe.db.exists("UOM", uom_name):
@@ -43,6 +46,7 @@ def create_or_get_uom(uom_name):
         frappe.db.commit()
         print(f"Created UOM: {uom_name}")
 
+# Ensure that a Price List exists
 def create_or_get_price_list(price_list_name):
     """Ensure that a Price List exists."""
     if not frappe.db.exists("Price List", price_list_name):
@@ -57,6 +61,7 @@ def create_or_get_price_list(price_list_name):
         frappe.db.commit()
         print(f"Created Price List: {price_list_name}")
 
+# Ensure that a Warehouse exists and is linked to the company
 def create_or_get_warehouse(warehouse_name, company):
     """Ensure that a Warehouse exists and is linked to the company."""
     # Check if the warehouse already exists
@@ -73,6 +78,7 @@ def create_or_get_warehouse(warehouse_name, company):
         frappe.db.commit()
         print(f"Created Warehouse: {warehouse_name}")
 
+# Load demo data from CSV file during installation
 def load_demo_data():
     """Load demo data from CSV file during installation."""
     print("Loading demo data...")
@@ -107,12 +113,11 @@ def load_demo_data():
                     item_code = row['item_code']
                     item_name = row['item_name']
                     valuation_rate = row['valuation_rate']
-					image = row['image']
+                    image = row['image']
                     item_group = row['item_group']
                     stock_uom = row['stock_uom']
                     standard_rate = row['standard_rate']
                     opening_stock = row['opening_stock']
-                    
 
                     # Create Item record
                     item = frappe.get_doc({
@@ -123,6 +128,7 @@ def load_demo_data():
                         "stock_uom": stock_uom,
                         "standard_rate": standard_rate,
                         "valuation_rate": valuation_rate,
+                        "image":image,
                     })
                     item.insert(ignore_permissions=True)
                     frappe.db.commit()
@@ -140,6 +146,7 @@ def load_demo_data():
     else:
         print(f"Demo data file not found: {demo_data_file}")
 
+# Create a Stock Entry for the initial stock
 def create_stock_entry(item_code, quantity, warehouse):
     """Create a Stock Entry for the initial stock."""
     stock_entry = frappe.get_doc({
@@ -158,6 +165,7 @@ def create_stock_entry(item_code, quantity, warehouse):
     frappe.db.commit()
     print(f"Created Stock Entry for {item_code} with {quantity} qty in {warehouse}")
 
+# Create an Item Price record
 def create_item_price(item_code, price):
     """Create Item Price record."""
     price_list = "Standard Selling"
