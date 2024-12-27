@@ -176,5 +176,3 @@ def create_item_price(item_code, price):
         frappe.db.commit()
         print(f"Created Item Price for {item_code}")
 
-# Call the function to load demo data during app installation
-load_demo_data()
