@@ -123,6 +123,38 @@ def create_or_get_item(item_code, item_name, item_group, stock_uom, standard_rat
         print(f"Error processing item '{item_code}': {e}")
         return None
 
+def create_stock_entry(item_code, opening_stock, company_name):
+    """Create a stock entry for the given item and opening stock"""
+    warehouse_name = f"Stores - {company_name[:3]}"  # Adjust warehouse naming convention if needed
+
+    # Check if warehouse exists
+    if not frappe.db.exists("Warehouse", warehouse_name):
+        print(f"Error: Warehouse '{warehouse_name}' not found for the company '{company_name}'")
+        return
+
+    # Create a stock entry (Stock Receipt)
+    stock_entry = frappe.get_doc({
+        "doctype": "Stock Entry",
+        "stock_entry_type": "Material Receipt",  # Correct stock entry type
+        "company": company_name,
+        "items": [{
+            "item_code": item_code,
+            "qty": float(opening_stock),
+            "uom": "kg",  # Use appropriate UOM
+            "t_warehouse": warehouse_name,  # Warehouse where stock is stored
+        }]
+    })
+
+    # Submit the stock entry to update stock levels
+    try:
+        stock_entry.insert(ignore_permissions=True)  # Insert into DB
+        stock_entry.submit()  # Submit the stock entry to make it effective
+        frappe.db.commit()
+        print(f"Created Stock Entry for Item: {item_code}, Warehouse: {warehouse_name}, Quantity: {opening_stock}")
+    except Exception as e:
+        print(f"Error submitting stock entry for Item: {item_code}: {e}")
+
+
 def create_stock_entry_type():
     """Create a Stock Entry Type 'Stock Receipt' if it doesn't exist"""
     stock_entry_type = "Stock Receipt"
@@ -209,4 +241,4 @@ def load_demo_data():
             frappe.log_error(message=str(e), title="Demo Data Import Error")
             print(f"Error while importing demo data: {e}")
     else:
-        print(f"Demo data file not found: {demo_data_file}")
+        print(f"Demo data file not found: {demo_data_file}") 
