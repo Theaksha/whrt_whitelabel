@@ -114,8 +114,8 @@ on_session_creation = "whrt_whitelabel.api.custom_on_session_creation"
 # after_install = "whrt_whitelabel.install.after_install"
 after_install = [
     "setup.install.setup_login_page",  # First function    
-    "setup.setup.load_demo_data", 
-    "setup.setup.create_pos_profile"
+    "setup.setup.load_demo_data"
+    
         # Second function
 ]
 
