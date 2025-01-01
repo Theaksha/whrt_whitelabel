@@ -84,3 +84,16 @@ def show_update_popup_update():
 	if update_message:
 		frappe.msgprint(update_message, title=_("New updates are available"), indicator='green')
 		cache.srem("update-user-set", user)
+
+
+def custom_on_session_creation(login_manager):
+    """
+    Redirect user to the POS page after login
+    """
+    user = frappe.session.user
+
+    # Specify the path to the POS page
+    pos_page_url = "/app/point-of-sale"  # Change this to the actual URL of your POS page
+
+    # Redirect to the POS page after login
+    frappe.local.response["home_page"] = pos_page_url
