@@ -34,6 +34,9 @@ app_logo_url = '/assets/whrt_whitelabel/images/login_logo.jpg'
 # include js, css files in header of desk.html
 app_include_css = "/assets/whrt_whitelabel/css/whrt_whitelabel.css"
 app_include_js = "/assets/whrt_whitelabel/js/whrt_whitelabel.js"
+     # Corrected to include both JS files
+
+
 
 # include js, css files in header of web template
 # web_include_css = "/assets/whrt_whitelabel/css/whrt_whitelabel.css"
@@ -79,6 +82,10 @@ website_context = {
 
 after_migrate = ['whrt_whitelabel.api.whitelabel_patch']
 
+
+on_session_creation = "whrt_whitelabel.api.custom_on_session_creation"
+
+
 # Generators
 # ----------
 
@@ -106,8 +113,10 @@ after_migrate = ['whrt_whitelabel.api.whitelabel_patch']
 # before_install = "whrt_whitelabel.install.before_install"
 # after_install = "whrt_whitelabel.install.after_install"
 after_install = [
-    "setup.install.setup_login_page",  # First function
-    "setup.setup.load_demo_data"  # Second function
+    "setup.install.setup_login_page",  # First function    
+    "setup.setup.load_demo_data", 
+    "setup.setup.create_pos_profile"
+        # Second function
 ]
 
 # Uninstallation
