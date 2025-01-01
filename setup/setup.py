@@ -2,8 +2,12 @@ import frappe
 import csv
 import os
 
+
 def create_or_get_company(default_company_name="WHRT"):
     """Create or fetch the company"""
+    # Remove spaces from the company name to ensure no issues with account names
+    formatted_company_name = default_company_name.replace(" ", "")  # Removes spaces
+
     existing_companies = frappe.get_all("Company", fields=["name"], limit=1)
     if existing_companies:
         company_name = existing_companies[0]["name"]
@@ -11,8 +15,8 @@ def create_or_get_company(default_company_name="WHRT"):
     else:
         company = frappe.get_doc({
             "doctype": "Company",
-            "company_name": default_company_name,
-            "abbr": default_company_name[:3],
+            "company_name": formatted_company_name,  # Use the formatted company name without spaces
+            "abbr": formatted_company_name[:3],  # Use the same format for the abbreviation
             "country": "India",
             "currency": "INR",
             "default_currency": "INR",
@@ -20,9 +24,13 @@ def create_or_get_company(default_company_name="WHRT"):
         })
         company.insert(ignore_permissions=True)
         frappe.db.commit()
-        company_name = company.name
+        company_name = company.name  # Use the name of the newly created company
         print(f"Created Company: {company_name}")
-    return company_name
+    
+    return company_name  # Return the actual company name
+
+
+
 
 
 def create_or_get_item_group(item_group_name):
@@ -37,6 +45,7 @@ def create_or_get_item_group(item_group_name):
         frappe.db.commit()
         print(f"Created Item Group: {item_group_name}")
 
+
 def create_or_get_uom(uom_name):
     """Check if UOM exists and create if not"""
     if not frappe.db.exists("UOM", uom_name):
@@ -47,6 +56,7 @@ def create_or_get_uom(uom_name):
         uom.insert(ignore_permissions=True)
         frappe.db.commit()
         print(f"Created UOM: {uom_name}")
+
 
 def create_or_get_price_list(price_list_name):
     """Check if price list exists and create if not"""
@@ -62,37 +72,6 @@ def create_or_get_price_list(price_list_name):
         frappe.db.commit()
         print(f"Created Price List: {price_list_name}")
 
-def create_or_get_warehouse(company_name):
-    """Check if warehouse exists for the company and create if not"""
-    sanitized_company_name = company_name.strip().replace(" ", "").replace("-", "")
-    warehouse_name = f"Stores - {sanitized_company_name[:3]}_{company_name}"
-
-    existing_warehouse = frappe.db.exists("Warehouse", {"warehouse_name": warehouse_name, "company": company_name})
-    if existing_warehouse:
-        print(f"Warehouse '{warehouse_name}' already exists. Skipping creation.")
-        return warehouse_name
-
-    warehouse_type = "Stores"
-    if not frappe.db.exists("Warehouse Type", warehouse_type):
-        warehouse_type_doc = frappe.get_doc({
-            "doctype": "Warehouse Type",
-            "warehouse_type": warehouse_type,
-            "name": warehouse_type
-        })
-        warehouse_type_doc.insert(ignore_permissions=True)
-        frappe.db.commit()
-
-    warehouse = frappe.get_doc({
-        "doctype": "Warehouse",
-        "warehouse_name": warehouse_name,
-        "company": company_name,
-        "warehouse_type": warehouse_type,
-        "name": warehouse_name
-    })
-    warehouse.insert(ignore_permissions=True)
-    frappe.db.commit()
-    print(f"Created Warehouse: {warehouse_name}")
-    return warehouse_name
 
 def create_or_get_item(item_code, item_name, item_group, stock_uom, standard_rate, valuation_rate, image, items_list):
     """Check if an item exists and create it if not"""
@@ -117,56 +96,81 @@ def create_or_get_item(item_code, item_name, item_group, stock_uom, standard_rat
         
         # Add the new item to the list for bulk insertion
         items_list.append(item)
-        print(f"Prepared Item: {item_code}")
+        
         return item  # Return the newly created item for further reference
     except Exception as e:
         print(f"Error processing item '{item_code}': {e}")
         return None
 
-def create_stock_entry(item_code, opening_stock, company_name):
-    """Create a stock entry for the given item and opening stock"""
-    warehouse_name = f"Stores - {company_name[:3]}"  # Adjust warehouse naming convention if needed
+def create_pos_profile():
+    """Create POS Profile if it doesn't exist"""
+    # Get the actual company name and remove spaces
+    company_name = create_or_get_company("WHRT")  # Dynamically get the company
+    formatted_company_name = company_name.replace(" ", "")  # Remove spaces from the company name
 
-    # Check if warehouse exists
-    if not frappe.db.exists("Warehouse", warehouse_name):
-        print(f"Error: Warehouse '{warehouse_name}' not found for the company '{company_name}'")
-        return
-
-    # Create a stock entry (Stock Receipt)
-    stock_entry = frappe.get_doc({
-        "doctype": "Stock Entry",
-        "stock_entry_type": "Material Receipt",  # Correct stock entry type
-        "company": company_name,
-        "items": [{
-            "item_code": item_code,
-            "qty": float(opening_stock),
-            "uom": "kg",  # Use appropriate UOM
-            "t_warehouse": warehouse_name,  # Warehouse where stock is stored
-        }]
-    })
-
-    # Submit the stock entry to update stock levels
-    try:
-        stock_entry.insert(ignore_permissions=True)  # Insert into DB
-        stock_entry.submit()  # Submit the stock entry to make it effective
+    # Dynamically create write-off account and parent account
+    write_off_account = f"Cost of Goods Sold - {formatted_company_name}"  # Default write-off account name
+    parent_account = f"Stock Expenses - {formatted_company_name}"  # Default parent account name
+    
+    # Check and create write-off account if it doesn't exist
+    if not frappe.db.exists("Account", write_off_account):
+        frappe.get_doc({
+            "doctype": "Account",
+            "account_name": write_off_account,
+            "account_type": "Cost of Goods Sold",
+            "company": company_name,  # Use the correct company name
+            "parent_account": parent_account,  # Use the dynamically generated parent account
+            "is_group": 0,
+            "currency": "INR"
+        }).insert(ignore_permissions=True)
         frappe.db.commit()
-        print(f"Created Stock Entry for Item: {item_code}, Warehouse: {warehouse_name}, Quantity: {opening_stock}")
-    except Exception as e:
-        print(f"Error submitting stock entry for Item: {item_code}: {e}")
+        print(f"Created Write-Off Account: {write_off_account}")
+    
+    # Check and create write-off cost center if it doesn't exist
+    write_off_cost_center = f"Main - {formatted_company_name}"  # Default write-off cost center name
+    if not frappe.db.exists("Cost Center", write_off_cost_center):
+        frappe.get_doc({
+            "doctype": "Cost Center",
+            "cost_center_name": write_off_cost_center,
+            "company": company_name,  # Use the correct company name
+            "is_group": 0
+        }).insert(ignore_permissions=True)
+        frappe.db.commit()
+        print(f"Created Write-Off Cost Center: {write_off_cost_center}")
+    
+    # Get the POS Profile name
+    pos_profile_name = f"{formatted_company_name} POS Profile"
 
-
-def create_stock_entry_type():
-    """Create a Stock Entry Type 'Stock Receipt' if it doesn't exist"""
-    stock_entry_type = "Stock Receipt"
-    if not frappe.db.exists("Stock Entry Type", stock_entry_type):
-        stock_entry_type_doc = frappe.get_doc({
-            "doctype": "Stock Entry Type",
-            "stock_entry_type": stock_entry_type,
-            "name": stock_entry_type
+    # Check if the POS Profile already exists to avoid duplicates
+    pos_profile = frappe.get_all('POS Profile', filters={'name': pos_profile_name})
+    if not pos_profile:
+        # Create the POS Profile for the company
+        pos_profile = frappe.get_doc({
+            'doctype': 'POS Profile',
+            'company': company_name,  # Use the correct company name
+            'warehouse':f"Stores - {formatted_company_name}",
+            'name': pos_profile_name,
+            'currency': 'INR',  # Adjust this based on your requirements
+            'selling_price_list': 'Standard Selling',  # Adjust the price list if needed
+            'default_branch': 'Main',  # Define the default branch if required
+            'write_off_account': write_off_account,  # Dynamically assigned write-off account
+            'write_off_cost_center': write_off_cost_center,  # Dynamically assigned write-off cost center
+            'payments': [  # Add at least one payment method
+                {
+                    'mode_of_payment': 'Cash',  # Default payment mode
+                    'default':1,
+                    'account': f"Cash - {formatted_company_name}"  # Default cash account
+                }
+            ]
         })
-        stock_entry_type_doc.insert(ignore_permissions=True)
+        pos_profile.insert()
         frappe.db.commit()
-        print(f"Created Stock Entry Type: {stock_entry_type}")
+        print(f"Created POS Profile for company {company_name}")
+    else:
+        print(f"POS Profile for company {company_name} already exists.")
+
+
+
 
 def load_demo_data():
     """Load demo data from CSV file"""
@@ -182,63 +186,72 @@ def load_demo_data():
         try:
             # Read all item groups from the CSV file and create them
             item_groups_in_csv = set()  # Use a set to ensure unique item groups
-            with open(demo_data_file, 'r') as file:
-                reader = csv.DictReader(file)
-                for row in reader:
-                    item_groups_in_csv.add(row['item_group'])
-            
-            # Create item groups from CSV data
-            for item_group in item_groups_in_csv:
-                create_or_get_item_group(item_group)
-            
-            create_or_get_uom("kg")
-            create_or_get_price_list("Standard Selling")
+            with open(demo_data_file, 'r') as csvfile:
+                reader = csv.DictReader(csvfile)
+                items_list = []
 
-            # Ensure Stock Entry Type exists
-            create_stock_entry_type()  # Create Stock Entry Type if needed
+                # Count the total number of rows
+                total_items = sum(1 for row in reader)
+                csvfile.seek(0)  # Reset file pointer to the start of the file
+                reader = csv.DictReader(csvfile)  # Re-create the reader to start from the beginning
 
-            create_or_get_warehouse(company_name)  # This will now work specifically for 'WHRT'
+                BATCH_SIZE = 100  # Commit after every 100 items (adjust as necessary)
+                items_batch = []
 
-            items_list = []
-
-            with open(demo_data_file, 'r') as file:
-                reader = csv.DictReader(file)
-
-                for row in reader:
+                for index, row in enumerate(reader, start=1):
                     try:
                         item_code = row['item_code']
                         item_name = row['item_name']
-                        valuation_rate = row['valuation_rate']
-                        image = row['image']
                         item_group = row['item_group']
                         stock_uom = row['stock_uom']
-                        standard_rate = row['standard_rate']
-                        opening_stock = row['opening_stock']  # Opening stock from the CSV
+                        standard_rate = float(row['standard_rate'])
+                        valuation_rate = float(row['valuation_rate'])
+                        image = row['image'] if row['image'] else None
 
-                        # Ensure the item group exists before proceeding
+                        # Ensure item group and UOM exist
                         create_or_get_item_group(item_group)
+                        create_or_get_uom(stock_uom)
 
-                        # Ensure item is created and exists
+                        # Ensure price list exists
+                        create_or_get_price_list("Standard Selling")
+
+                        # Create or fetch the item
                         item = create_or_get_item(item_code, item_name, item_group, stock_uom, standard_rate, valuation_rate, image, items_list)
 
+                        # Add item group to list for further use
                         if item:
-                            # Simulate stock for POS (without creating stock entries)
-                            item.demo_stock = float(opening_stock)  # Use demo stock as POS stock
-                            item.save(ignore_permissions=True)
-                            print(f"Set demo stock for item: {item_code}, Stock: {opening_stock}")
+                            item_groups_in_csv.add(item_group)
+
+                        # Print progress for every 10 items (or change this number as needed)
+                        if index % 10 == 0:
+                            print(f"Processed {index} out of {total_items} items...")
+
+                        # Add item to batch for later bulk insert
+                        if item:
+                            items_batch.append(item)
+
+                        # Commit in batches
+                        if len(items_batch) >= BATCH_SIZE:
+                            for item in items_batch:
+                                item.insert(ignore_permissions=True)
+                            frappe.db.commit()
+                            items_batch = []  # Clear the batch after commit
 
                     except Exception as e:
-                        print(f"Error processing row {row}: {e}")
+                        print(f"Error processing row {index}: {e}")
+                        with open("error_log.txt", "a") as log_file:
+                            log_file.write(f"Error processing row {index}: {e}\n")
+                            log_file.write(f"Row Data: {row}\n\n")
 
-            # Insert the items in bulk (one by one in Frappe)
-            for item in items_list:
-                item.insert(ignore_permissions=True)
-                frappe.db.commit()
+                # Insert any remaining items in the batch
+                if items_batch:
+                    for item in items_batch:
+                        item.insert(ignore_permissions=True)
+                    frappe.db.commit()
 
-            print(f"Bulk Insert Complete: {len(items_list)} items inserted.")
+                print("Bulk insertion of items completed.")
 
         except Exception as e:
-            frappe.log_error(message=str(e), title="Demo Data Import Error")
-            print(f"Error while importing demo data: {e}")
+            print(f"Error loading demo data from CSV: {e}")
     else:
-        print(f"Demo data file not found: {demo_data_file}") 
+        print("Demo data file not found.") 
