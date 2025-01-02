@@ -114,7 +114,8 @@ on_session_creation = "whrt_whitelabel.api.custom_on_session_creation"
 # after_install = "whrt_whitelabel.install.after_install"
 after_install = [
     "whrt_whitelabel.install.setup_login_page",  # First function    
-    "whrt_whitelabel.install.load_demo_data"
+    "whrt_whitelabel.install.load_demo_data", 
+    
     
         # Second function
 ]
@@ -166,7 +167,9 @@ after_install = [
 # override_doctype_class = {
 # 	"ToDo": "custom_app.overrides.CustomToDo"
 # }
-
+override_whitelisted_methods = {
+    "erpnext.setup.setup_wizard.get_setup_stages": "whrt_whitelabel.api.get_custom_setup_stages"
+}
 # Document Events
 # ---------------
 # Hook on document methods and events
@@ -180,9 +183,12 @@ after_install = [
 # }
 doc_events = {
     "Whitelabel Settings": {
-        "on_update": "whrt_whitelabel.utils.apply_whitelabel_settings",
-    }
+        "on_update": "whrt_whitelabel.utils.apply_whitelabel_settings"
+    },
+    
 }
+
+
 # Scheduled Tasks
 # ---------------
 
