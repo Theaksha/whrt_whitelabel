@@ -1,12 +1,13 @@
 import frappe
 import csv
 import os
+from tqdm import tqdm  # Import tqdm for progress bar
 
 def setup_login_page():
     # Set custom login page to open after login (POS page)
     frappe.db.set_value("Website Settings", "Website Settings", "login_page", "pos")
     
-	
+    
 def create_or_get_item_group(item_group_name):
     """Check if item group exists and create if not"""
     if not frappe.db.exists("Item Group", item_group_name):
@@ -53,7 +54,7 @@ def create_or_get_item(item_code, item_name, item_group, stock_uom, standard_rat
         # Check if the item already exists by Item Code
         existing_item = frappe.db.exists("Item", {"item_code": item_code})
         if existing_item:
-            print(f"Item '{item_code}' already exists. Skipping creation.")
+            
             return existing_item  # Return the existing item
 
         # If the item doesn't exist, create it
@@ -73,7 +74,7 @@ def create_or_get_item(item_code, item_name, item_group, stock_uom, standard_rat
         
         return item  # Return the newly created item for further reference
     except Exception as e:
-        print(f"Error processing item '{item_code}': {e}")
+        
         return None
 
 
@@ -110,7 +111,7 @@ def load_demo_data():
                 BATCH_SIZE = 500  # Commit after every 100 items (adjust as necessary)
                 items_batch = []
 
-                for index, row in enumerate(reader, start=1):
+                for index, row in enumerate(tqdm(reader, total=total_items, desc="Processing items"), start=1):
                     try:
                         item_code = row['item_code']
                         item_name = row['item_name']
@@ -134,9 +135,7 @@ def load_demo_data():
                         if item:
                             item_groups_in_csv.add(item_group)
 
-                        # Print progress for every 10 items (or change this number as needed)
-                        if index % 100 == 0:
-                            print(f"Processed {index} out of {total_items} items...")
+                        
 
                         # Add item to batch for later bulk insert
                         if item:
@@ -150,7 +149,7 @@ def load_demo_data():
                             items_batch = []  # Clear the batch after commit
 
                     except Exception as e:
-                        print(f"Error processing row {index}: {e}")
+                        
                         with open("error_log.txt", "a") as log_file:
                             log_file.write(f"Error processing row {index}: {e}\n")
                             log_file.write(f"Row Data: {row}\n\n")
