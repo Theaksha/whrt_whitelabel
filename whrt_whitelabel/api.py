@@ -3,6 +3,11 @@ import frappe
 import json
 from frappe.utils import floor, flt, today, cint
 from frappe import _
+from frappe.model.document import Document
+from frappe.utils.background_jobs import enqueue
+from erpnext.setup import setup_wizard
+ 
+
 
 def whitelabel_patch():
 	#delete erpnext welcome page 
@@ -84,7 +89,8 @@ def show_update_popup_update():
 	if update_message:
 		frappe.msgprint(update_message, title=_("New updates are available"), indicator='green')
 		cache.srem("update-user-set", user)
-
+        
+ 
 
 def custom_on_session_creation(login_manager):
     """
@@ -97,3 +103,79 @@ def custom_on_session_creation(login_manager):
 
     # Redirect to the POS page after login
     frappe.local.response["home_page"] = pos_page_url
+    
+    
+    
+ 
+
+ # Import your custom POS profile creation function
+
+# Your custom POS profile creation function
+def create_pos_profile(self=None, args=None):
+    """Create the default POS Profile and link payment method."""
+    frappe.logger().info("Inside create_pos_profile function")
+
+    if not frappe.db.exists("POS Profile", "Default POS Profile"):
+        pos_profile_name = "Default POS Profile"
+
+        # Ensure that the payment method "Cash" exists
+        if not frappe.db.exists("POS Payment Method", "Cash"):
+            pos_payment_method = frappe.get_doc({
+                "doctype": "POS Payment Method",
+                "payment_type": "Cash",
+                "mode_of_payment": "Cash",
+                "account": "Cash - INR",
+                "default": 1,
+                "parent": pos_profile_name,
+                "parenttype": "POS Profile"
+            })
+            pos_payment_method.insert()
+            frappe.logger().info("POS Payment Method 'Cash' created.")
+
+        # Now create the POS Profile
+        pos_profile = frappe.get_doc({
+            "doctype": "POS Profile",
+            "name": "Default POS Profile",
+            "price_list": "Standard Selling",
+            "currency": "INR",
+            "default_customer_group": "Retail",
+            "payments": [
+                {
+                    "payment_method": "Cash"
+                }
+            ]
+        })
+        pos_profile.insert()
+        frappe.db.commit()
+        frappe.logger().info("POS Profile 'Default POS Profile' created.")
+
+def get_custom_setup_stages(args=None):
+    """Override the get_setup_stages to add a custom POS Profile creation stage"""
+    frappe.logger().info("Inside get_custom_setup_stages function")
+
+    stages = setup_wizard.get_setup_stages(args)
+
+    # Log the stages to check if the setup is proceeding correctly
+    frappe.logger().info(f"Original stages: {stages}")
+
+    # Find the 'Setting defaults' stage and add the create_pos_profile function after it
+    for stage in stages:
+        if stage["status"] == _("Setting defaults"):
+            # Insert custom stage after 'Setting defaults'
+            stages.insert(
+                stages.index(stage) + 1,
+                {
+                    "status": _("Creating POS Profile"),
+                    "fail_msg": _("Failed to create POS Profile"),
+                    "tasks": [
+                        {
+                            "fn": create_pos_profile,
+                            "args": args,
+                            "fail_msg": _("Failed to create POS Profile")
+                        }
+                    ]
+                }
+            )
+            frappe.logger().info("Custom POS Profile creation stage added.")
+
+    return stages
