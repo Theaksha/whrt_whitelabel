@@ -7,7 +7,7 @@ def setup_login_page():
     frappe.db.set_value("Website Settings", "Website Settings", "login_page", "pos")
     
     
- def create_or_get_item_group(item_group_name):
+def create_or_get_item_group(item_group_name):
     """Check if item group exists and create if not"""
     if not frappe.db.exists("Item Group", item_group_name):
         item_group = frappe.get_doc({
