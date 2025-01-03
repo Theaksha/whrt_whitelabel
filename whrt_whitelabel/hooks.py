@@ -170,7 +170,7 @@ def install_erpnext():
             try:
                 print("Installing ERPNext dependencies...")
                 subprocess.check_call(
-                    [os.path.join(bench_root, "env", "bin", "pip"), "install", "-r", os.path.join(erpnext_path, "requirements.txt")],
+                    [os.path.join(bench_root), "install", "-r", os.path.join(erpnext_path, "requirements.txt")],
                     env=os.environ
                 )
                 print("ERPNext dependencies installed successfully.")
