@@ -126,9 +126,17 @@ setup_wizard_complete = "whrt_whitelabel.tasks.check_if_setup_completed"
 
 
 
+import os
+import subprocess
+import frappe
+
 def install_erpnext():
     site = frappe.local.site
-    lock_path = f"/home/akshay/new-bench/sites/{site}/locks/install_app.lock"
+
+    # Get the bench root directory dynamically (assuming the script is run from within the bench environment)
+    bench_root = frappe.get_site_path("..")  # This points to the root bench directory
+    site_path = frappe.get_site_path()  # This is the path for the current site
+    lock_path = os.path.join(site_path, "locks", "install_app.lock")
     erpnext_repo_url = "https://github.com/frappe/erpnext.git"
 
     # Check if ERPNext is already installed
@@ -142,11 +150,11 @@ def install_erpnext():
             print(f"Lock file found at {lock_path}, removing it...")
             os.remove(lock_path)
 
-        # Check if ERPNext is in the apps directory
-        erpnext_path = "/home/akshay/new-bench/apps/erpnext"
+        # Check if ERPNext is in the apps directory (dynamic path)
+        erpnext_path = os.path.join(bench_root, "apps", "erpnext")
         if not os.path.exists(erpnext_path):
             print("ERPNext not found in bench apps. Cloning ERPNext from GitHub...")
-            
+
             try:
                 # Clone ERPNext repository from GitHub
                 subprocess.check_call(
@@ -162,7 +170,7 @@ def install_erpnext():
             try:
                 print("Installing ERPNext dependencies...")
                 subprocess.check_call(
-                    ["/home/akshay/new-bench/env/bin/pip", "install", "-r", f"{erpnext_path}/requirements.txt"],
+                    [os.path.join(bench_root, "env", "bin", "pip"), "install", "-r", os.path.join(erpnext_path, "requirements.txt")],
                     env=os.environ
                 )
                 print("ERPNext dependencies installed successfully.")
@@ -170,11 +178,11 @@ def install_erpnext():
                 print(f"Error while installing ERPNext dependencies: {e}")
                 return
 
-        # Install ERPNext for the site
+        # Install ERPNext for the site (dynamic path for bench executable)
         try:
             print(f"Running bench install-app for site: {site}...")
             subprocess.check_call(
-                ['bench', '--site', site, 'install-app', 'erpnext', '--force'],
+                [os.path.join(bench_root, "env", "bin", "bench"), '--site', site, 'install-app', 'erpnext', '--force'],
                 env=os.environ  # Pass the environment to the subprocess
             )
             print("ERPNext installed successfully via bench.")
@@ -183,6 +191,7 @@ def install_erpnext():
             return
 
     print("ERPNext installation process complete.")
+
 
 
 def ensure_tqdm_installed():
