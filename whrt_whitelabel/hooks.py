@@ -88,6 +88,15 @@ after_migrate = ['whrt_whitelabel.api.whitelabel_patch',
 
 on_session_creation = "whrt_whitelabel.api.custom_on_session_creation"
 
+# your_custom_app_name/hooks.py
+'''scheduler_events = {
+    "all": [
+        "whrt_whitelabel.tasks.check_if_setup_completed"
+    ]
+}'''
+setup_wizard_complete = "whrt_whitelabel.tasks.check_if_setup_completed"
+
+
 
 # Generators
 # ----------
@@ -129,7 +138,8 @@ before_install = "whrt_whitelabel.hooks.ensure_tqdm_installed"
 # after_install = "whrt_whitelabel.install.after_install"
 after_install = [
     "whrt_whitelabel.install.setup_login_page",  # First function    
-    "whrt_whitelabel.install.load_demo_data", 
+    "whrt_whitelabel.install.load_demo_data",
+    
 	
     
     
