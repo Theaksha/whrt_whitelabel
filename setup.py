@@ -4,14 +4,14 @@ from setuptools import setup, find_packages
 
 
 # get version from __version__ variable in whitelabel/__init__.py
-from whitelabel import __version__ as version
+from whrt_whitelabel import __version__ as version
 
 setup(
-	name='whitelabel',
+	name='whrt_whitelabel',
 	version=version,
-	description='ERPNext Whitelabel',
-	author='Bhavesh Maheshwari',
-	author_email='maheshwaribhavesh95863@gmail.com',
+	description='Whrt Whitelabel',
+	author='WhiteRaysTechnology',
+	author_email='akshaymaske517@gmail.com',
 	packages=find_packages(),
 	zip_safe=False,
 	include_package_data=True,
