@@ -182,7 +182,7 @@ def install_erpnext():
         try:
             print(f"Running bench install-app for site: {site}...")
             subprocess.check_call(
-                [os.path.join(bench_root, "env", "bin", "bench"), '--site', site, 'install-app', 'erpnext', '--force'],
+                [os.path.join(bench_root), '--site', site, 'install-app', 'erpnext', '--force'],
                 env=os.environ  # Pass the environment to the subprocess
             )
             print("ERPNext installed successfully via bench.")
