@@ -2,6 +2,8 @@ import frappe
 import csv
 import os
 from tqdm import tqdm  # Import tqdm for progress bar
+import subprocess
+import sys
 
 def setup_login_page():
     # Set custom login page to open after login (POS page)
@@ -80,9 +82,12 @@ def create_or_get_item(item_code, item_name, item_group, stock_uom, standard_rat
 
 
 
-
-
-    
+def after_install():
+    # Ensure tqdm is installed
+    try:
+        import tqdm
+    except ImportError:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "tqdm"])    
    
 
 
