@@ -74,7 +74,7 @@ def load_demo_data():
                 csvfile.seek(0)
                 reader = csv.DictReader(csvfile)
 
-                BATCH_SIZE = 500
+                BATCH_SIZE = 100
                 items_batch = []
 
                 for index, row in enumerate(tqdm(reader, total=total_items, desc="Processing items"), start=1):
