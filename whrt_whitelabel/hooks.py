@@ -3,6 +3,8 @@ from . import __version__ as app_version
 from . import __logo__ as app_logo
 import frappe
 from frappe.utils import now
+import subprocess
+import sys
 
 app_name = "whrt_whitelabel"
 app_title = "Whrt Whitelabel"
@@ -110,13 +112,25 @@ on_session_creation = "whrt_whitelabel.api.custom_on_session_creation"
 
 # Installation
 # ------------
+# Ensure `tqdm` is installed before installation
+def ensure_tqdm_installed():
+    try:
+        import tqdm  # noqa
+    except ImportError:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "tqdm"])
+        print("Installed `tqdm` successfully.")
+
+# Installation
+# Runs before the app is installed
+before_install = "whrt_whitelabel.hooks.ensure_tqdm_installed"
+
 
 # before_install = "whrt_whitelabel.install.before_install"
 # after_install = "whrt_whitelabel.install.after_install"
 after_install = [
     "whrt_whitelabel.install.setup_login_page",  # First function    
     "whrt_whitelabel.install.load_demo_data", 
-	"whrt_whitelabel.install.after_install",
+	
     
     
         # Second function
