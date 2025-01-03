@@ -5,6 +5,7 @@ import frappe
 from frappe.utils import now
 import subprocess
 import sys
+import os
 
 app_name = "whrt_whitelabel"
 app_title = "Whrt Whitelabel"
@@ -122,16 +123,85 @@ setup_wizard_complete = "whrt_whitelabel.tasks.check_if_setup_completed"
 # Installation
 # ------------
 # Ensure `tqdm` is installed before installation
+
+
+
+def install_erpnext():
+    site = frappe.local.site
+    lock_path = f"/home/akshay/new-bench/sites/{site}/locks/install_app.lock"
+    erpnext_repo_url = "https://github.com/frappe/erpnext.git"
+
+    # Check if ERPNext is already installed
+    if "erpnext" in frappe.get_installed_apps():
+        print("ERPNext is already installed for this site.")
+    else:
+        print("ERPNext is not installed for this site. Installing ERPNext...")
+
+        # Remove the lock file if it exists
+        if os.path.exists(lock_path):
+            print(f"Lock file found at {lock_path}, removing it...")
+            os.remove(lock_path)
+
+        # Check if ERPNext is in the apps directory
+        erpnext_path = "/home/akshay/new-bench/apps/erpnext"
+        if not os.path.exists(erpnext_path):
+            print("ERPNext not found in bench apps. Cloning ERPNext from GitHub...")
+            
+            try:
+                # Clone ERPNext repository from GitHub
+                subprocess.check_call(
+                    ['git', 'clone', erpnext_repo_url, erpnext_path],
+                    env=os.environ
+                )
+                print("ERPNext cloned successfully from GitHub.")
+            except subprocess.CalledProcessError as e:
+                print(f"Error while cloning ERPNext: {e}")
+                return
+
+            # Install ERPNext dependencies
+            try:
+                print("Installing ERPNext dependencies...")
+                subprocess.check_call(
+                    ["/home/akshay/new-bench/env/bin/pip", "install", "-r", f"{erpnext_path}/requirements.txt"],
+                    env=os.environ
+                )
+                print("ERPNext dependencies installed successfully.")
+            except subprocess.CalledProcessError as e:
+                print(f"Error while installing ERPNext dependencies: {e}")
+                return
+
+        # Install ERPNext for the site
+        try:
+            print(f"Running bench install-app for site: {site}...")
+            subprocess.check_call(
+                ['bench', '--site', site, 'install-app', 'erpnext', '--force'],
+                env=os.environ  # Pass the environment to the subprocess
+            )
+            print("ERPNext installed successfully via bench.")
+        except subprocess.CalledProcessError as e:
+            print(f"Error while installing ERPNext via bench: {e}")
+            return
+
+    print("ERPNext installation process complete.")
+
+
 def ensure_tqdm_installed():
+    print("Ensuring tqdm is installed...")
     try:
         import tqdm  # noqa
     except ImportError:
+        print("tqdm not found. Installing tqdm...")
         subprocess.check_call([sys.executable, "-m", "pip", "install", "tqdm"])
         print("Installed `tqdm` successfully.")
+    else:
+        print("tqdm is already installed.")
 
 # Installation
 # Runs before the app is installed
-before_install = "whrt_whitelabel.hooks.ensure_tqdm_installed"
+before_install = [
+    "whrt_whitelabel.hooks.ensure_tqdm_installed",
+    "whrt_whitelabel.hooks.install_erpnext",
+]
 
 
 # before_install = "whrt_whitelabel.install.before_install"
