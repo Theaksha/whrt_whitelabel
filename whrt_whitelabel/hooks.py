@@ -127,45 +127,13 @@ setup_wizard_complete = "whrt_whitelabel.tasks.check_if_setup_completed"
 
 
 def install_erpnext():
-    import os
-    import subprocess
-    import frappe
-
+    
     # Get the bench directory dynamically
     bench_dir = frappe.get_site_path("..")  # This points to the bench directory
-    apps_dir = os.path.join( "apps")  # Path to the apps folder
+    
     erpnext_repo_url = "https://github.com/frappe/erpnext.git"  # ERPNext repo URL
-    erpnext_path = os.path.join(apps_dir, "erpnext")  # Path to the ERPNext app in the bench
-
-    # Check if ERPNext is already installed in the apps directory
-    if os.path.exists(erpnext_path):
-        print("ERPNext app is already in the bench directory.")
-    else:
-        print("ERPNext app not found in the bench directory. Cloning from GitHub...")
-
-        try:
-            # Clone ERPNext repository into the apps directory
-            subprocess.check_call(
-                ["git", "clone", erpnext_repo_url, erpnext_path],
-                cwd=apps_dir,  # Set the current working directory to the apps folder
-                env=os.environ  # Pass the environment variables
-            )
-            print("ERPNext successfully cloned into the apps directory.")
-        except subprocess.CalledProcessError as e:
-            print(f"Error while cloning ERPNext: {e}")
-            return
-
-        # Install dependencies for the ERPNext app
-        try:
-            print("Installing ERPNext dependencies...")
-            subprocess.check_call(
-                ["pip", "install", "-r", os.path.join(erpnext_path, "requirements.txt")],
-                env=os.environ
-            )
-            print("ERPNext dependencies installed successfully.")
-        except subprocess.CalledProcessError as e:
-            print(f"Error while installing ERPNext dependencies: {e}")
-            return
+    
+    #
 
     # Check if ERPNext is installed for the current site
     site = frappe.local.site
