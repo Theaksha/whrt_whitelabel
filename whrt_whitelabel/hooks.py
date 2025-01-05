@@ -127,64 +127,66 @@ setup_wizard_complete = "whrt_whitelabel.tasks.check_if_setup_completed"
 
 
 def install_erpnext():
-    site = frappe.local.site
+    import os
+    import subprocess
+    import frappe
 
-    # Get the bench root directory dynamically (assuming the script is run from within the bench environment)
-    bench_root = os.path.abspath(frappe.get_site_path(".."))  # Bench root directory
-    site_path = frappe.get_site_path()  # Current site's path
-    lock_path = os.path.join(site_path, "locks", "install_app.lock")
-    erpnext_repo_url = "https://github.com/frappe/erpnext.git"
+    # Get the bench directory dynamically
+    bench_dir = frappe.get_site_path("..")  # This points to the bench directory
+    apps_dir = os.path.join(bench_dir, "apps")  # Path to the apps folder
+    erpnext_repo_url = "https://github.com/frappe/erpnext.git"  # ERPNext repo URL
+    erpnext_path = os.path.join(apps_dir, "erpnext")  # Path to the ERPNext app in the bench
 
-    # Check if ERPNext is already installed
-    if "erpnext" in frappe.get_installed_apps():
-        print("ERPNext is already installed for this site.")
-        return
+    # Check if ERPNext is already installed in the apps directory
+    if os.path.exists(erpnext_path):
+        print("ERPNext app is already in the bench directory.")
+    else:
+        print("ERPNext app not found in the bench directory. Cloning from GitHub...")
 
-    print("ERPNext is not installed for this site. Proceeding with installation...")
-
-    # Remove the lock file if it exists
-    if os.path.exists(lock_path):
-        print(f"Lock file found at {lock_path}. Removing it...")
-        os.remove(lock_path)
-
-    # Check if ERPNext exists in the bench apps directory
-    erpnext_path = os.path.join(bench_root, "apps", "erpnext")
-    if not os.path.exists(erpnext_path):
-        print("ERPNext not found in bench apps. Cloning ERPNext from GitHub...")
         try:
-            subprocess.check_call(["git", "clone", erpnext_repo_url, erpnext_path], env=os.environ)
-            print("ERPNext cloned successfully.")
+            # Clone ERPNext repository into the apps directory
+            subprocess.check_call(
+                ["git", "clone", erpnext_repo_url, erpnext_path],
+                cwd=apps_dir,  # Set the current working directory to the apps folder
+                env=os.environ  # Pass the environment variables
+            )
+            print("ERPNext successfully cloned into the apps directory.")
         except subprocess.CalledProcessError as e:
             print(f"Error while cloning ERPNext: {e}")
             return
 
-    # Install ERPNext dependencies
-    try:
-        print("Installing ERPNext dependencies...")
-        subprocess.check_call(
-            [sys.executable, "-m", "pip", "install", "-r", os.path.join(erpnext_path, "requirements.txt")],
-            env=os.environ
-        )
-        print("Dependencies installed successfully.")
-    except subprocess.CalledProcessError as e:
-        print(f"Error installing ERPNext dependencies: {e}")
-        return
+        # Install dependencies for the ERPNext app
+        try:
+            print("Installing ERPNext dependencies...")
+            subprocess.check_call(
+                ["pip", "install", "-r", os.path.join(erpnext_path, "requirements.txt")],
+                env=os.environ
+            )
+            print("ERPNext dependencies installed successfully.")
+        except subprocess.CalledProcessError as e:
+            print(f"Error while installing ERPNext dependencies: {e}")
+            return
 
-    # Install ERPNext for the current site
-    try:
-        print(f"Installing ERPNext for site: {site}...")
-        subprocess.check_call(
-            ["bench", "--site", site, "install-app", "erpnext"],
-            cwd=bench_root,
-            env=os.environ
-        )
-        print("ERPNext installed successfully.")
-    except subprocess.CalledProcessError as e:
-        print(f"Error during ERPNext installation: {e}")
-        return
+    # Check if ERPNext is installed for the current site
+    site = frappe.local.site
+    if "erpnext" in frappe.get_installed_apps():
+        print(f"ERPNext is already installed for site '{site}'.")
+    else:
+        print(f"Installing ERPNext for site '{site}'...")
 
-    print("ERPNext installation process complete.")
+        try:
+            # Run the bench install-app command to install ERPNext for the site
+            subprocess.check_call(
+                ["bench", "--site", site, "install-app", "erpnext"],
+                cwd=bench_dir,  # Set the working directory to the bench directory
+                env=os.environ
+            )
+            print(f"ERPNext installed successfully for site '{site}'.")
+        except subprocess.CalledProcessError as e:
+            print(f"Error while installing ERPNext for site '{site}': {e}")
+            return
 
+    print("ERPNext installation process completed.")
 
 def ensure_tqdm_installed():
     print("Ensuring tqdm is installed...")
