@@ -133,7 +133,7 @@ def install_erpnext():
 
     # Get the bench directory dynamically
     bench_dir = frappe.get_site_path("..")  # This points to the bench directory
-    apps_dir = os.path.join(bench_dir, "apps")  # Path to the apps folder
+    apps_dir = os.path.join( "apps")  # Path to the apps folder
     erpnext_repo_url = "https://github.com/frappe/erpnext.git"  # ERPNext repo URL
     erpnext_path = os.path.join(apps_dir, "erpnext")  # Path to the ERPNext app in the bench
 
