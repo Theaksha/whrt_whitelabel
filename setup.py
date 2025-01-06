@@ -15,6 +15,10 @@ setup(
 	packages=find_packages(),
 	zip_safe=False,
 	include_package_data=True,
+	entry_points={
+        'bench.commands': [
+            'get-app = whrt_whitelabel.commands.get_app:get_app',
+        ]
 	install_requires=[
         'tqdm'
     ],
