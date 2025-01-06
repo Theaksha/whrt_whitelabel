@@ -129,7 +129,7 @@ setup_wizard_complete = "whrt_whitelabel.tasks.check_if_setup_completed"
 def install_erpnext():
     
     # Get the bench directory dynamically
-    bench_dir = frappe.get_site_path("..")  # This points to the bench directory
+    bench_dir =os.getenv("BENCH_REPO")  # This points to the bench directory
     
     erpnext_repo_url = "https://github.com/frappe/erpnext.git"  # ERPNext repo URL
     
