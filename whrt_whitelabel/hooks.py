@@ -6,6 +6,7 @@ from frappe.utils import now
 import subprocess
 import sys
 import os
+from whrt_whitelabel.clone_erpnext import clone_erpnext
 
 app_name = "whrt_whitelabel"
 app_title = "Whrt Whitelabel"
@@ -126,7 +127,7 @@ setup_wizard_complete = "whrt_whitelabel.tasks.check_if_setup_completed"
 
 
 
-def install_erpnext():
+'''def install_erpnext():
     site = frappe.local.site
 
     # Get the bench root directory dynamically (assuming the script is run from within the bench environment)
@@ -198,7 +199,11 @@ def install_erpnext():
             print(f"Error while installing ERPNext via bench: {e}")
             return
 
-    print("ERPNext installation process complete.")
+    print("ERPNext installation process complete.")'''
+
+def before_get_app():
+    clone_erpnext()
+    print("ERPNext clone check completed.")
 
 def ensure_tqdm_installed():
     print("Ensuring tqdm is installed...")
@@ -215,7 +220,7 @@ def ensure_tqdm_installed():
 # Runs before the app is installed
 before_install = [
     "whrt_whitelabel.hooks.ensure_tqdm_installed",
-    "whrt_whitelabel.hooks.install_erpnext",
+    #"whrt_whitelabel.hooks.install_erpnext",
 ]
 
 
