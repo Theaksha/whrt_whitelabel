@@ -3,41 +3,75 @@ import csv
 import os
 from tqdm import tqdm  # Import tqdm for progress bar
 import subprocess
+import json  # Im
 
-def get_current_site():
-    """Get the current site from the bench"""
-    # Reading the sites from the bench sites directory to get the current site
-    sites_dir = os.path.join(os.getcwd(), "sites")
-    if os.path.exists(sites_dir):
-        # List all site directories
-        site_list = os.listdir(sites_dir)
-        if site_list:
-            # Assuming the first site in the list is the active one
-            return site_list[0]
-    return None
+site = frappe.local.site
 
-def install_erpnext():
-    # Get the current active site dynamically
-    site = get_current_site()
-    if not site:
-        raise Exception("No site found. Please create a site first.")
+    # Get the bench root directory dynamically
+    bench_root = os.getenv("BENCH_REPO")
+    if not bench_root:
+        print("Warning: BENCH_REPO environment variable is not set, falling back to parent directory.")
+        bench_root = os.path.abspath(os.path.join(os.getcwd(), ".."))  # Fallback to parent directory if BENCH_REPO is not set
     
-    # Path to the site
-    site_dir = os.path.join(os.getcwd(), "sites", site)
-    erpnext_dir = os.path.join(os.getcwd(), "apps", "erpnext")
+    if not bench_root:
+        raise ValueError("Could not determine the bench root directory.")
 
-    # Clone ERPNext if it's not already present
-    if not os.path.exists(erpnext_dir):
-        print("Cloning ERPNext...")
-        subprocess.run(["git", "clone", "https://github.com/frappe/erpnext.git", erpnext_dir])
+    site_path = frappe.get_site_path()  # Path for the current site
+    if not site_path:
+        raise ValueError("Failed to get site path. Ensure the frappe site is correctly set up.")
+    
+    lock_path = os.path.join(site_path, "locks", "install_app.lock")
+    apps_json_path = os.path.join(bench_root, "sites", "apps.json")
 
-    # Install ERPNext in the site
-    print(f"Installing ERPNext in the site '{site}'...")
-    subprocess.run(["bench", "use", site])  # Use the dynamic site
-    subprocess.run(["bench", "get-app", "erpnext", "--branch", "version-14"])  # Specify the ERPNext version if needed
-    subprocess.run(["bench", "install-app", "erpnext"])
+    # Check if ERPNext is already installed
+    if "erpnext" in frappe.get_installed_apps():
+        print("ERPNext is already installed for this site.")
+    else:
+        print("ERPNext is not installed for this site. Installing ERPNext...")
 
-    print("ERPNext installation completed successfully.")
+        # Remove the lock file if it exists
+        if os.path.exists(lock_path):
+            print(f"Lock file found at {lock_path}, removing it...")
+            os.remove(lock_path)
+
+        # Update apps.json
+        try:
+            print(f"Updating {apps_json_path} to include ERPNext...")
+            with open(apps_json_path, "r+") as f:
+                apps = json.load(f)
+
+                # Check if apps.json contains a list or a dictionary
+                if isinstance(apps, list):
+                    if "erpnext" not in apps:
+                        apps.append("erpnext")
+                elif isinstance(apps, dict):
+                    if "erpnext" not in apps.values():
+                        apps["erpnext"] = "erpnext"
+                else:
+                    raise ValueError(f"Unexpected apps.json format: {type(apps)}")
+
+                f.seek(0)
+                f.truncate()
+                json.dump(apps, f, indent=4)
+                print("ERPNext added to apps.json successfully.")
+
+            print(f"Running bench install-app for site: {site}...")
+            subprocess.check_call(
+                ['bench', '--site', site, 'install-app', 'erpnext', '--force'],
+                env=os.environ  # Pass the environment to the subprocess
+            )
+            print("ERPNext installed successfully via bench.")
+        except subprocess.CalledProcessError as e:
+            print(f"Error while installing ERPNext via bench: {e}")
+            return
+        except FileNotFoundError:
+            print(f"apps.json not found at {apps_json_path}. Ensure the bench environment is set up properly.")
+            return
+        except ValueError as e:
+            print(f"Error updating apps.json: {e}")
+            return
+
+    print("ERPNext installation process complete.") 
 
 
 def setup_login_page():
