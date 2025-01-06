@@ -25,7 +25,7 @@ def get_erpnext_commit_hash_and_version(erpnext_path):
 
         return commit_hash, version
     except subprocess.CalledProcessError as e:
-        print(f"Error while fetching commit hash or version: {e}")
+        print(f"Error while fetching commit hash or version from {erpnext_path}: {e}")
         return None, None
 
 
@@ -44,7 +44,12 @@ def update_apps_json_for_erpnext():
     
     # ERPNext path in the bench directory
     erpnext_path = os.path.join(bench_root, 'apps', 'erpnext')
-    
+
+    # Ensure ERPNext exists in the path before fetching version and commit hash
+    if not os.path.exists(erpnext_path):
+        print(f"Error: ERPNext directory does not exist at {erpnext_path}")
+        return
+
     # Get the commit hash and version for ERPNext
     commit_hash, version = get_erpnext_commit_hash_and_version(erpnext_path)
     
@@ -76,11 +81,13 @@ def update_apps_json_for_erpnext():
         with open(apps_json_path, 'w') as f:
             json.dump(apps, f, indent=4)
         print(f"ERPNext added to apps.json with commit_hash {commit_hash} and version {version}.")
+    else:
+        print("ERPNext already exists in apps.json.")
 
 
 # Function to clone ERPNext from GitHub if not already present
 def clone_erpnext(bench_root):
-    erpnext_repo_url = "https://github.com/frappe/erpnext.git"
+    erpnext_repo_url = "https://github.com/frappe/erpnext"
     erpnext_path = os.path.join(bench_root, 'apps', 'erpnext')
 
     if not os.path.exists(erpnext_path):
@@ -146,7 +153,8 @@ def install_erpnext():
             print(f"Error while installing ERPNext via bench: {e}")
             return
 
-    print("ERPNext installation process complete.")  
+    print("ERPNext installation process complete.")    
+    
 def setup_login_page():
     frappe.db.set_value("Website Settings", "Website Settings", "login_page", "pos")
     
