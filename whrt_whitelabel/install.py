@@ -4,9 +4,40 @@ import os
 from tqdm import tqdm  # Import tqdm for progress bar
 import subprocess
 
-def after_install():
-    print("Cloning ERPNext...")
-    subprocess.run(["git", "clone", "https://github.com/frappe/erpnext", "apps/erpnext"])
+def get_current_site():
+    """Get the current site from the bench"""
+    # Reading the sites from the bench sites directory to get the current site
+    sites_dir = os.path.join(os.getcwd(), "sites")
+    if os.path.exists(sites_dir):
+        # List all site directories
+        site_list = os.listdir(sites_dir)
+        if site_list:
+            # Assuming the first site in the list is the active one
+            return site_list[0]
+    return None
+
+def install_erpnext():
+    # Get the current active site dynamically
+    site = get_current_site()
+    if not site:
+        raise Exception("No site found. Please create a site first.")
+    
+    # Path to the site
+    site_dir = os.path.join(os.getcwd(), "sites", site)
+    erpnext_dir = os.path.join(os.getcwd(), "apps", "erpnext")
+
+    # Clone ERPNext if it's not already present
+    if not os.path.exists(erpnext_dir):
+        print("Cloning ERPNext...")
+        subprocess.run(["git", "clone", "https://github.com/frappe/erpnext.git", erpnext_dir])
+
+    # Install ERPNext in the site
+    print(f"Installing ERPNext in the site '{site}'...")
+    subprocess.run(["bench", "use", site])  # Use the dynamic site
+    subprocess.run(["bench", "get-app", "erpnext", "--branch", "version-14"])  # Specify the ERPNext version if needed
+    subprocess.run(["bench", "install-app", "erpnext"])
+
+    print("ERPNext installation completed successfully.")
 
 
 def setup_login_page():
