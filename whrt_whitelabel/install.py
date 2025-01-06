@@ -78,6 +78,27 @@ def update_apps_json_for_erpnext():
         print(f"ERPNext added to apps.json with commit_hash {commit_hash} and version {version}.")
 
 
+# Function to clone ERPNext from GitHub if not already present
+def clone_erpnext(bench_root):
+    erpnext_repo_url = "https://github.com/frappe/erpnext.git"
+    erpnext_path = os.path.join(bench_root, 'apps', 'erpnext')
+
+    if not os.path.exists(erpnext_path):
+        print("ERPNext not found in the apps directory. Cloning ERPNext...")
+        try:
+            subprocess.check_call(
+                ['git', 'clone', erpnext_repo_url, erpnext_path],
+                env=os.environ
+            )
+            print("ERPNext cloned successfully.")
+        except subprocess.CalledProcessError as e:
+            print(f"Error while cloning ERPNext: {e}")
+            return False
+    else:
+        print("ERPNext already exists in the apps directory.")
+    return True
+
+
 # Main installation function for ERPNext
 def install_erpnext():
     site = frappe.local.site
@@ -97,6 +118,11 @@ def install_erpnext():
     
     lock_path = os.path.join(site_path, "locks", "install_app.lock")
     
+    # Clone ERPNext if not already present in the apps directory
+    if not clone_erpnext(bench_root):
+        print("Failed to clone ERPNext. Exiting installation.")
+        return
+
     # Check if ERPNext is already installed
     if "erpnext" in frappe.get_installed_apps():
         print("ERPNext is already installed for this site.")
@@ -120,7 +146,7 @@ def install_erpnext():
             print(f"Error while installing ERPNext via bench: {e}")
             return
 
-    print("ERPNext installation process complete.")    
+    print("ERPNext installation process complete.")  
 def setup_login_page():
     frappe.db.set_value("Website Settings", "Website Settings", "login_page", "pos")
     
