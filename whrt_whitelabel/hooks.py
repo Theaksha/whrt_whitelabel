@@ -16,6 +16,13 @@ app_email = "akshaymaske517@gmail.com"
 app_license = "mit"
 app_logo_url = '/assets/whrt_whitelabel/images/login_logo.jpg'
 
+
+entry_points={
+        'bench.commands': [
+            'get-app = whrt_whitelabel.commands.get_app:get_app',
+        ],
+    },
+
 # Apps
 # ------------------
 
