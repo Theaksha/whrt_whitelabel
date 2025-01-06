@@ -7,7 +7,7 @@ import json  # Im
 
 
 def install_erpnext():
-site = frappe.local.site
+    site = frappe.local.site
 
     # Get the bench root directory dynamically
     bench_root = os.getenv("BENCH_REPO")
@@ -74,8 +74,6 @@ site = frappe.local.site
             return
 
     print("ERPNext installation process complete.") 
-
-
 def setup_login_page():
     frappe.db.set_value("Website Settings", "Website Settings", "login_page", "pos")
     
