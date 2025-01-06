@@ -19,6 +19,10 @@ setup(
         'bench.commands': [
             'get-app = whrt_whitelabel.commands.get_app:get_app',
         ]
+	},
+	cmdclass={
+        'install': CustomInstallCommand,
+    },
 	install_requires=[
         'tqdm'
     ],
