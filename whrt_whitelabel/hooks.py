@@ -130,7 +130,7 @@ def install_erpnext():
     site = frappe.local.site
 
     # Get the bench root directory dynamically (assuming the script is run from within the bench environment)
-    bench_root = frappe.get_site_path("..")  # This points to the root bench directory
+    bench_root = os.getenv("BENCH_REPO")  # This points to the root bench directory
     site_path = frappe.get_site_path()  # This is the path for the current site
     lock_path = os.path.join(site_path, "locks", "install_app.lock")
     erpnext_repo_url = "https://github.com/frappe/erpnext.git"
