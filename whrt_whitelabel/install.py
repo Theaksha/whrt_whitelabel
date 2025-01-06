@@ -6,6 +6,79 @@ import subprocess
 import json  # Im
 
 
+# Function to get the latest commit hash and version from the ERPNext Git repository
+def get_erpnext_commit_hash_and_version(erpnext_path):
+    try:
+        # Get the commit hash (the latest commit)
+        commit_hash = subprocess.check_output(
+            ['git', 'rev-parse', 'HEAD'],
+            cwd=erpnext_path,
+            text=True
+        ).strip()
+
+        # Get the version (using the latest tag)
+        version = subprocess.check_output(
+            ['git', 'describe', '--tags', '--abbrev=0'],
+            cwd=erpnext_path,
+            text=True
+        ).strip()
+
+        return commit_hash, version
+    except subprocess.CalledProcessError as e:
+        print(f"Error while fetching commit hash or version: {e}")
+        return None, None
+
+
+# Function to update apps.json with ERPNext details
+def update_apps_json_for_erpnext():
+    bench_root = os.getenv("BENCH_REPO")
+    if not bench_root:
+        print("Warning: BENCH_REPO environment variable is not set, falling back to parent directory.")
+        bench_root = os.path.abspath(os.path.join(os.getcwd(), ".."))  # Fallback to parent directory if BENCH_REPO is not set
+    
+    if not bench_root:
+        raise ValueError("Could not determine the bench root directory.")
+    
+    # Path to apps.json located in the sites directory
+    apps_json_path = os.path.join(bench_root, 'sites', 'apps.json')
+    
+    # ERPNext path in the bench directory
+    erpnext_path = os.path.join(bench_root, 'apps', 'erpnext')
+    
+    # Get the commit hash and version for ERPNext
+    commit_hash, version = get_erpnext_commit_hash_and_version(erpnext_path)
+    
+    if not commit_hash or not version:
+        print("Error: Could not retrieve commit hash or version for ERPNext.")
+        return
+    
+    # Read the existing apps.json
+    if os.path.exists(apps_json_path):
+        with open(apps_json_path, 'r') as f:
+            apps = json.load(f)
+    else:
+        apps = {}
+
+    # Add ERPNext to apps.json if not already present
+    if 'erpnext' not in apps:
+        apps['erpnext'] = {
+            "is_repo": True,
+            "resolution": {
+                "commit_hash": commit_hash,  # Automatically fetched commit hash
+                "branch": 'develop'  # You can set the branch dynamically if needed
+            },
+            "required": [],
+            "idx": len(apps) + 1,  # Incremental index
+            "version": version  # Automatically fetched version
+        }
+        
+        # Write the updated apps.json back to the file
+        with open(apps_json_path, 'w') as f:
+            json.dump(apps, f, indent=4)
+        print(f"ERPNext added to apps.json with commit_hash {commit_hash} and version {version}.")
+
+
+# Main installation function for ERPNext
 def install_erpnext():
     site = frappe.local.site
 
@@ -47,9 +120,7 @@ def install_erpnext():
             print(f"Error while installing ERPNext via bench: {e}")
             return
 
-    print("ERPNext installation process complete.")
-
-
+    print("ERPNext installation process complete.")    
 def setup_login_page():
     frappe.db.set_value("Website Settings", "Website Settings", "login_page", "pos")
     
@@ -162,3 +233,8 @@ def load_demo_data():
                     frappe.db.commit()
         except Exception:
             pass
+
+
+if __name__ == "__main__":
+    update_apps_json_for_erpnext()  # Add ERPNext to apps.json
+    install_erpnext()  # Install ERPNext
