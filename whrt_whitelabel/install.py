@@ -5,6 +5,8 @@ from tqdm import tqdm  # Import tqdm for progress bar
 import subprocess
 import json  # Im
 
+
+def install_erpnext():
 site = frappe.local.site
 
     # Get the bench root directory dynamically
