@@ -178,7 +178,7 @@ def install_erpnext():
                 requirements_path = os.path.join(erpnext_path, "requirements.txt")
                 print(f"Installing from {requirements_path}")
                 subprocess.check_call(
-                    [os.path.join(bench_root), "install", "-r", requirements_path],
+                    [os.path.join(erpnext_path), "install", "-r", requirements_path],
                     env=os.environ
                 )
                 print("ERPNext dependencies installed successfully.")
@@ -190,7 +190,7 @@ def install_erpnext():
         try:
             print(f"Running bench install-app for site: {site}...")
             subprocess.check_call(
-                [os.path.join(bench_root), '--site', site, 'install-app', 'erpnext', '--force'],
+                ['bench', '--site', site, 'install-app', 'erpnext'],
                 env=os.environ  # Pass the environment to the subprocess
             )
             print("ERPNext installed successfully via bench.")
