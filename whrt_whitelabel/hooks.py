@@ -130,8 +130,18 @@ def install_erpnext():
     site = frappe.local.site
 
     # Get the bench root directory dynamically (assuming the script is run from within the bench environment)
-    bench_root = os.getenv("BENCH_REPO")  # This points to the root bench directory
+    bench_root = os.getenv("BENCH_REPO")
+    if not bench_root:
+        print("Warning: BENCH_REPO environment variable is not set, falling back to parent directory.")
+        bench_root = os.path.abspath(os.path.join(os.getcwd(), ".."))  # Fallback to parent directory if BENCH_REPO is not set
+    
+    if not bench_root:
+        raise ValueError("Could not determine the bench root directory.")
+
     site_path = frappe.get_site_path()  # This is the path for the current site
+    if not site_path:
+        raise ValueError("Failed to get site path. Ensure the frappe site is correctly set up.")
+    
     lock_path = os.path.join(site_path, "locks", "install_app.lock")
     erpnext_repo_url = "https://github.com/frappe/erpnext.git"
 
@@ -165,8 +175,10 @@ def install_erpnext():
             # Install ERPNext dependencies
             try:
                 print("Installing ERPNext dependencies...")
+                requirements_path = os.path.join(erpnext_path, "requirements.txt")
+                print(f"Installing from {requirements_path}")
                 subprocess.check_call(
-                    [os.path.join(bench_root), "install", "-r", os.path.join(erpnext_path, "requirements.txt")],
+                    [os.path.join(bench_root), "install", "-r", requirements_path],
                     env=os.environ
                 )
                 print("ERPNext dependencies installed successfully.")
