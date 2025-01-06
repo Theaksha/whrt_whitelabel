@@ -234,7 +234,7 @@ before_install = [
 # before_install = "whrt_whitelabel.install.before_install"
 # after_install = "whrt_whitelabel.install.after_install"
 after_install = [
-	"whrt_whitelabel.install.update_apps_json_for_erpnext",
+	
 	"whrt_whitelabel.install.install_erpnext",
     
     "whrt_whitelabel.install.setup_login_page",  # First function    
