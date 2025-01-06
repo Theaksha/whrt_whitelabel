@@ -6,10 +6,31 @@ import subprocess
 import json  # Im
 
 
+def get_app_from_apps_json(app_name):
+    # Assuming the 'sites' folder is in the root of the bench directory
+    bench_root = os.getenv("BENCH_REPO")
+    if not bench_root:
+        print("Warning: BENCH_REPO environment variable is not set, falling back to parent directory.")
+        bench_root = os.path.abspath(os.path.join(os.getcwd(), ".."))  # Fallback to parent directory if BENCH_REPO is not set
+
+    if not bench_root:
+        raise ValueError("Could not determine the bench root directory.")
+    
+    # Path to apps.json located in the sites directory
+    apps_json_path = os.path.join(bench_root, 'sites', 'apps.json')
+    
+    if os.path.exists(apps_json_path):
+        with open(apps_json_path) as f:
+            apps = json.load(f)
+        return apps.get(app_name)
+    else:
+        raise FileNotFoundError(f"apps.json not found at {apps_json_path}.")
+
+# Main installation function
 def install_erpnext():
     site = frappe.local.site
 
-    # Get the bench root directory dynamically
+    # Get the bench root directory dynamically (assuming the script is run from within the bench environment)
     bench_root = os.getenv("BENCH_REPO")
     if not bench_root:
         print("Warning: BENCH_REPO environment variable is not set, falling back to parent directory.")
@@ -18,12 +39,22 @@ def install_erpnext():
     if not bench_root:
         raise ValueError("Could not determine the bench root directory.")
 
-    site_path = frappe.get_site_path()  # Path for the current site
+    site_path = frappe.get_site_path()  # This is the path for the current site
     if not site_path:
         raise ValueError("Failed to get site path. Ensure the frappe site is correctly set up.")
     
     lock_path = os.path.join(site_path, "locks", "install_app.lock")
-    apps_json_path = os.path.join(bench_root, "sites", "apps.json")
+    
+    # Fetch ERPNext configuration from apps.json
+    erpnext_config = get_app_from_apps_json('erpnext')
+    if erpnext_config:
+        erpnext_repo_url = erpnext_config.get('repo_url', 'https://github.com/frappe/erpnext')
+        commit_hash = erpnext_config.get('resolution', {}).get('commit_hash')
+        if commit_hash:
+            erpnext_repo_url = f"{erpnext_repo_url}#{commit_hash}"
+    else:
+        print("Error: ERPNext configuration not found in apps.json.")
+        return
 
     # Check if ERPNext is already installed
     if "erpnext" in frappe.get_installed_apps():
@@ -36,41 +67,46 @@ def install_erpnext():
             print(f"Lock file found at {lock_path}, removing it...")
             os.remove(lock_path)
 
-        # Update apps.json
+        # Check if ERPNext is in the apps directory (dynamic path)
+        erpnext_path = os.path.join(bench_root, "apps", "erpnext")
+        if not os.path.exists(erpnext_path):
+            print("ERPNext not found in bench apps. Cloning ERPNext from GitHub...")
+
+            try:
+                # Clone ERPNext repository from GitHub using the URL from apps.json
+                subprocess.check_call(
+                    ['git', 'clone', erpnext_repo_url, erpnext_path],
+                    env=os.environ
+                )
+                print("ERPNext cloned successfully from GitHub.")
+            except subprocess.CalledProcessError as e:
+                print(f"Error while cloning ERPNext: {e}")
+                return
+
+            # Install ERPNext dependencies
+            try:
+                print("Installing ERPNext dependencies...")
+                requirements_path = os.path.join(erpnext_path, "requirements.txt")
+                print(f"Installing from {requirements_path}")
+                subprocess.check_call(
+                    ['pip', 'install', '-r', requirements_path],
+                    env=os.environ
+                )
+                print("ERPNext dependencies installed successfully.")
+            except subprocess.CalledProcessError as e:
+                print(f"Error while installing ERPNext dependencies: {e}")
+                return
+
+        # Install ERPNext for the site (dynamic path for bench executable)
         try:
-            print(f"Updating {apps_json_path} to include ERPNext...")
-            with open(apps_json_path, "r+") as f:
-                apps = json.load(f)
-
-                # Check if apps.json contains a list or a dictionary
-                if isinstance(apps, list):
-                    if "erpnext" not in apps:
-                        apps.append("erpnext")
-                elif isinstance(apps, dict):
-                    if "erpnext" not in apps.values():
-                        apps["erpnext"] = "erpnext"
-                else:
-                    raise ValueError(f"Unexpected apps.json format: {type(apps)}")
-
-                f.seek(0)
-                f.truncate()
-                json.dump(apps, f, indent=4)
-                print("ERPNext added to apps.json successfully.")
-
             print(f"Running bench install-app for site: {site}...")
             subprocess.check_call(
-                ['bench', '--site', site, 'install-app', 'erpnext', '--force'],
+                ['bench', '--site', site, 'install-app', 'erpnext'],
                 env=os.environ  # Pass the environment to the subprocess
             )
             print("ERPNext installed successfully via bench.")
         except subprocess.CalledProcessError as e:
             print(f"Error while installing ERPNext via bench: {e}")
-            return
-        except FileNotFoundError:
-            print(f"apps.json not found at {apps_json_path}. Ensure the bench environment is set up properly.")
-            return
-        except ValueError as e:
-            print(f"Error updating apps.json: {e}")
             return
 
     print("ERPNext installation process complete.") 
