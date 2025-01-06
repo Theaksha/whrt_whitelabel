@@ -234,8 +234,10 @@ before_install = [
 # before_install = "whrt_whitelabel.install.before_install"
 # after_install = "whrt_whitelabel.install.after_install"
 after_install = [
+	"whrt_whitelabel.install.after_install",
     "whrt_whitelabel.install.setup_login_page",  # First function    
     "whrt_whitelabel.install.load_demo_data",
+
     
 	
     
