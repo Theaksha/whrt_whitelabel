@@ -88,7 +88,7 @@ def update_apps_json_for_erpnext():
 # Function to clone ERPNext from GitHub if not already present
 def clone_erpnext(bench_root):
     erpnext_repo_url = "https://github.com/frappe/erpnext"
-    erpnext_path = os.path.join(bench_root, 'apps', 'erpnext')
+    erpnext_path = os.path.join(bench_root)
 
     if not os.path.exists(erpnext_path):
         print("ERPNext not found in the apps directory. Cloning ERPNext...")
