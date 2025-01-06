@@ -6,131 +6,39 @@ import subprocess
 import json  # Im
 
 
-# Function to get the latest commit hash and version from the ERPNext Git repository
-def get_erpnext_commit_hash_and_version(erpnext_path):
-    try:
-        # Get the commit hash (the latest commit)
-        commit_hash = subprocess.check_output(
-            ['git', 'rev-parse', 'HEAD'],
-            cwd=erpnext_path,
-            text=True
-        ).strip()
-
-        # Get the version (using the latest tag)
-        version = subprocess.check_output(
-            ['git', 'describe', '--tags', '--abbrev=0'],
-            cwd=erpnext_path,
-            text=True
-        ).strip()
-
-        return commit_hash, version
-    except subprocess.CalledProcessError as e:
-        print(f"Error while fetching commit hash or version from {erpnext_path}: {e}")
-        return None, None
-
-
-# Function to update apps.json with ERPNext details
-def update_apps_json_for_erpnext():
-    bench_root = os.getenv("BENCH_REPO")
-    if not bench_root:
-        print("Warning: BENCH_REPO environment variable is not set, falling back to parent directory.")
-        bench_root = os.path.abspath(os.path.join(os.getcwd(), ".."))  # Fallback to parent directory if BENCH_REPO is not set
-    
-    if not bench_root:
-        raise ValueError("Could not determine the bench root directory.")
-    
-    # Path to apps.json located in the sites directory
-    apps_json_path = os.path.join(bench_root, 'sites', 'apps.json')
-    
-    # ERPNext path in the bench directory
-    erpnext_path = os.path.join(bench_root, 'apps', 'erpnext')
-
-    # Ensure ERPNext exists in the path before fetching version and commit hash
-    if not os.path.exists(erpnext_path):
-        print(f"Error: ERPNext directory does not exist at {erpnext_path}")
-        return
-
-    # Get the commit hash and version for ERPNext
-    commit_hash, version = get_erpnext_commit_hash_and_version(erpnext_path)
-    
-    if not commit_hash or not version:
-        print("Error: Could not retrieve commit hash or version for ERPNext.")
-        return
-    
-    # Read the existing apps.json
-    if os.path.exists(apps_json_path):
-        with open(apps_json_path, 'r') as f:
-            apps = json.load(f)
-    else:
-        apps = {}
-
-    # Add ERPNext to apps.json if not already present
-    if 'erpnext' not in apps:
-        apps['erpnext'] = {
-            "is_repo": True,
-            "resolution": {
-                "commit_hash": commit_hash,  # Automatically fetched commit hash
-                "branch": 'develop'  # You can set the branch dynamically if needed
-            },
-            "required": [],
-            "idx": len(apps) + 1,  # Incremental index
-            "version": version  # Automatically fetched version
-        }
-        
-        # Write the updated apps.json back to the file
-        with open(apps_json_path, 'w') as f:
-            json.dump(apps, f, indent=4)
-        print(f"ERPNext added to apps.json with commit_hash {commit_hash} and version {version}.")
-    else:
-        print("ERPNext already exists in apps.json.")
-
-
-# Function to clone ERPNext from GitHub if not already present
-def clone_erpnext(bench_root):
-    erpnext_repo_url = "https://github.com/frappe/erpnext"
-    erpnext_path = os.path.join(bench_root)
-
-    if not os.path.exists(erpnext_path):
-        print("ERPNext not found in the apps directory. Cloning ERPNext...")
-        try:
-            subprocess.check_call(
-                ['git', 'clone', erpnext_repo_url, erpnext_path],
-                env=os.environ
-            )
-            print("ERPNext cloned successfully.")
-        except subprocess.CalledProcessError as e:
-            print(f"Error while cloning ERPNext: {e}")
-            return False
-    else:
-        print("ERPNext already exists in the apps directory.")
-    return True
-
-
 # Main installation function for ERPNext
 def install_erpnext():
     site = frappe.local.site
-
-    # Get the bench root directory dynamically (assuming the script is run from within the bench environment)
     bench_root = os.getenv("BENCH_REPO")
+    
     if not bench_root:
         print("Warning: BENCH_REPO environment variable is not set, falling back to parent directory.")
-        bench_root = os.path.abspath(os.path.join(os.getcwd(), ".."))  # Fallback to parent directory if BENCH_REPO is not set
-    
+        bench_root = os.path.abspath(os.path.join(os.getcwd(), ".."))
+
     if not bench_root:
         raise ValueError("Could not determine the bench root directory.")
 
-    site_path = frappe.get_site_path()  # This is the path for the current site
-    if not site_path:
-        raise ValueError("Failed to get site path. Ensure the frappe site is correctly set up.")
-    
-    lock_path = os.path.join(site_path, "locks", "install_app.lock")
-    
-    # Clone ERPNext if not already present in the apps directory
-    if not clone_erpnext(bench_root):
-        print("Failed to clone ERPNext. Exiting installation.")
-        return
+    # Check if ERPNext is already installed or not in the apps directory
+    erpnext_path = os.path.join(bench_root, 'apps', 'erpnext')
 
-    # Check if ERPNext is already installed
+    if not os.path.exists(erpnext_path):
+        print("ERPNext not found in the apps directory. Cloning ERPNext using bench get-app...")
+        try:
+            subprocess.check_call(
+                ['bench', 'get-app', 'erpnext', 'https://github.com/frappe/erpnext.git'],
+                cwd=bench_root,
+                env=os.environ
+            )
+            print("ERPNext cloned successfully using bench get-app.")
+        except subprocess.CalledProcessError as e:
+            print(f"Error while cloning ERPNext using bench get-app: {e}")
+            return False
+    else:
+        print("ERPNext already exists in the apps directory.")
+
+    # Check if ERPNext is already installed on the site
+    lock_path = os.path.join(site, "locks", "install_app.lock")
+    
     if "erpnext" in frappe.get_installed_apps():
         print("ERPNext is already installed for this site.")
     else:
@@ -154,6 +62,11 @@ def install_erpnext():
             return
 
     print("ERPNext installation process complete.")    
+
+
+# Run the installation
+if __name__ == "__main__":
+    install_erpnext()  # Install ERPNext  
     
 def setup_login_page():
     frappe.db.set_value("Website Settings", "Website Settings", "login_page", "pos")
