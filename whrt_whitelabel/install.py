@@ -2,6 +2,11 @@ import frappe
 import csv
 import os
 from tqdm import tqdm  # Import tqdm for progress bar
+import subprocess
+
+def after_install():
+    print("Cloning ERPNext...")
+    subprocess.run(["git", "clone", "https://github.com/frappe/erpnext", "apps/erpnext"])
 
 
 def setup_login_page():
