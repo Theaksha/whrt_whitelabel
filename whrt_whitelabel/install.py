@@ -6,11 +6,11 @@ import subprocess
 import json  # Im
 
 
-# Main installation function for ERPNext
+
 def install_erpnext():
     site = frappe.local.site
     bench_root = os.getenv("BENCH_REPO")
-    
+
     if not bench_root:
         print("Warning: BENCH_REPO environment variable is not set, falling back to parent directory.")
         bench_root = os.path.abspath(os.path.join(os.getcwd(), ".."))
@@ -36,9 +36,38 @@ def install_erpnext():
     else:
         print("ERPNext already exists in the apps directory.")
 
+    # Build assets using bench build
+    try:
+        print("Building frontend assets using bench build...")
+        subprocess.check_call(
+            ['bench', 'build'],
+            cwd=bench_root,
+            env=os.environ
+        )
+        print("Frontend assets built successfully.")
+    except subprocess.CalledProcessError as e:
+        print(f"Error while building frontend assets: {e}")
+        return False
+
+    # Install dependencies from requirements.txt
+    requirements_path = os.path.join(erpnext_path, 'requirements.txt')
+    if os.path.exists(requirements_path):
+        print(f"Installing dependencies from {requirements_path}...")
+        try:
+            subprocess.check_call(
+                ['pip', 'install', '-r', requirements_path],
+                env=os.environ
+            )
+            print("Dependencies installed successfully.")
+        except subprocess.CalledProcessError as e:
+            print(f"Error while installing dependencies: {e}")
+            return False
+    else:
+        print(f"requirements.txt not found at {requirements_path}. Skipping dependency installation.")
+
     # Check if ERPNext is already installed on the site
     lock_path = os.path.join(site, "locks", "install_app.lock")
-    
+
     if "erpnext" in frappe.get_installed_apps():
         print("ERPNext is already installed for this site.")
     else:
@@ -61,9 +90,7 @@ def install_erpnext():
             print(f"Error while installing ERPNext via bench: {e}")
             return
 
-    print("ERPNext installation process complete.")    
-
-
+    print("ERPNext installation process complete.")
 # Run the installation
 if __name__ == "__main__":
     install_erpnext()  # Install ERPNext  
