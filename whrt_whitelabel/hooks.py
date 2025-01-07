@@ -6,7 +6,7 @@ from frappe.utils import now
 import subprocess
 import sys
 import os
-from whrt_whitelabel.clone_erpnext import clone_erpnext
+
 
 app_name = "whrt_whitelabel"
 app_title = "Whrt Whitelabel"
