@@ -17,11 +17,7 @@ app_license = "mit"
 app_logo_url = '/assets/whrt_whitelabel/images/login_logo.jpg'
 
 
-entry_points={
-        'bench.commands': [
-            'get-app = whrt_whitelabel.commands.get_app:get_app',
-        ],
-    },
+
 
 # Apps
 # ------------------
@@ -91,18 +87,13 @@ website_context = {
 }
 
 
-after_migrate = ['whrt_whitelabel.api.whitelabel_patch',
-				'whrt_whitelabel.create_pos_profile_patch.execute']
+after_migrate = ['whrt_whitelabel.api.whitelabel_patch']
 
 
 on_session_creation = "whrt_whitelabel.api.custom_on_session_creation"
 
 # your_custom_app_name/hooks.py
-'''scheduler_events = {
-    "all": [
-        "whrt_whitelabel.tasks.check_if_setup_completed"
-    ]
-}'''
+
 setup_wizard_complete = "whrt_whitelabel.tasks.check_if_setup_completed"
 
 
@@ -134,83 +125,9 @@ setup_wizard_complete = "whrt_whitelabel.tasks.check_if_setup_completed"
 
 
 
-'''def install_erpnext():
-    site = frappe.local.site
 
-    # Get the bench root directory dynamically (assuming the script is run from within the bench environment)
-    bench_root = os.getenv("BENCH_REPO")
-    if not bench_root:
-        print("Warning: BENCH_REPO environment variable is not set, falling back to parent directory.")
-        bench_root = os.path.abspath(os.path.join(os.getcwd(), ".."))  # Fallback to parent directory if BENCH_REPO is not set
-    
-    if not bench_root:
-        raise ValueError("Could not determine the bench root directory.")
 
-    site_path = frappe.get_site_path()  # This is the path for the current site
-    if not site_path:
-        raise ValueError("Failed to get site path. Ensure the frappe site is correctly set up.")
-    
-    lock_path = os.path.join(site_path, "locks", "install_app.lock")
-    erpnext_repo_url = "https://github.com/frappe/erpnext.git"
 
-    # Check if ERPNext is already installed
-    if "erpnext" in frappe.get_installed_apps():
-        print("ERPNext is already installed for this site.")
-    else:
-        print("ERPNext is not installed for this site. Installing ERPNext...")
-
-        # Remove the lock file if it exists
-        if os.path.exists(lock_path):
-            print(f"Lock file found at {lock_path}, removing it...")
-            os.remove(lock_path)
-
-        # Check if ERPNext is in the apps directory (dynamic path)
-        erpnext_path = os.path.join(bench_root, "apps", "erpnext")
-        if not os.path.exists(erpnext_path):
-            print("ERPNext not found in bench apps. Cloning ERPNext from GitHub...")
-
-            try:
-                # Clone ERPNext repository from GitHub
-                subprocess.check_call(
-                    ['git', 'clone', erpnext_repo_url, erpnext_path],
-                    env=os.environ
-                )
-                print("ERPNext cloned successfully from GitHub.")
-            except subprocess.CalledProcessError as e:
-                print(f"Error while cloning ERPNext: {e}")
-                return
-
-            # Install ERPNext dependencies
-            try:
-                print("Installing ERPNext dependencies...")
-                requirements_path = os.path.join(erpnext_path, "requirements.txt")
-                print(f"Installing from {requirements_path}")
-                subprocess.check_call(
-                    [os.path.join(erpnext_path), "install", "-r", requirements_path],
-                    env=os.environ
-                )
-                print("ERPNext dependencies installed successfully.")
-            except subprocess.CalledProcessError as e:
-                print(f"Error while installing ERPNext dependencies: {e}")
-                return
-
-        # Install ERPNext for the site (dynamic path for bench executable)
-        try:
-            print(f"Running bench install-app for site: {site}...")
-            subprocess.check_call(
-                ['bench', '--site', site, 'install-app', 'erpnext'],
-                env=os.environ  # Pass the environment to the subprocess
-            )
-            print("ERPNext installed successfully via bench.")
-        except subprocess.CalledProcessError as e:
-            print(f"Error while installing ERPNext via bench: {e}")
-            return
-
-    print("ERPNext installation process complete.")'''
-
-def before_get_app():
-    clone_erpnext()
-    print("ERPNext clone check completed.")
 
 def ensure_tqdm_installed():
     print("Ensuring tqdm is installed...")
@@ -227,7 +144,7 @@ def ensure_tqdm_installed():
 # Runs before the app is installed
 before_install = [
     "whrt_whitelabel.hooks.ensure_tqdm_installed",
-    #"whrt_whitelabel.hooks.install_erpnext",
+    
 ]
 
 
@@ -235,16 +152,10 @@ before_install = [
 # after_install = "whrt_whitelabel.install.after_install"
 after_install = [
 	
-	"whrt_whitelabel.install.install_erpnext",
-    
-    "whrt_whitelabel.install.setup_login_page",  # First function    
+	"whrt_whitelabel.install.install_erpnext",    
+    "whrt_whitelabel.install.setup_login_page",    
     "whrt_whitelabel.install.load_demo_data",
-
-    
-	
-    
-    
-        # Second function
+        
 ]
 
 # Uninstallation
