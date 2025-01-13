@@ -97,6 +97,13 @@ on_session_creation = "whrt_whitelabel.api.custom_on_session_creation"
 setup_wizard_complete = "whrt_whitelabel.tasks.check_if_setup_completed"
 
 
+restful = {
+    "GET": {
+        "/api/method/whrt_whitelabel.api.get_site_config": "whrt_whitelabel.api.get_site_config",
+    }
+}
+
+
 
 # Generators
 # ----------
@@ -154,7 +161,10 @@ after_install = [
 	
 	"whrt_whitelabel.install.install_erpnext",    
     "whrt_whitelabel.install.setup_login_page",    
-    "whrt_whitelabel.install.load_demo_data",
+    #"whrt_whitelabel.install.load_demo_data",
+    "whrt_whitelabel.install.install_react_app",
+    "whrt_whitelabel.utils.add_cors_config",
+
         
 ]
 
@@ -206,6 +216,11 @@ after_install = [
 # 	"ToDo": "custom_app.overrides.CustomToDo"
 # }
 override_whitelisted_methods = {
+    "whrt_whitelabel.api.get_products": "whrt_whitelabel.api.get_products",
+    "whrt_whitelabel.api.get_item_groups": "whrt_whitelabel.api.get_item_groups",
+    "whrt_whitelabel.api.create_order": "whrt_whitelabel.api.create_order",
+    "whrt_whitelabel.api.get_order_details": "whrt_whitelabel.api.get_order_details",
+    "whrt_whitelabel.api.get_site_url": "whrt_whitelabel.api.get_site_url",
     "erpnext.setup.setup_wizard.get_setup_stages": "whrt_whitelabel.api.get_custom_setup_stages"
 }
 # Document Events
