@@ -161,9 +161,9 @@ after_install = [
 	
 	"whrt_whitelabel.install.install_erpnext",    
     "whrt_whitelabel.install.setup_login_page",    
-    #"whrt_whitelabel.install.load_demo_data",
-    "whrt_whitelabel.install.install_react_app",
-    "whrt_whitelabel.utils.add_cors_config",
+    "whrt_whitelabel.install.load_demo_data",
+    #"whrt_whitelabel.install.install_react_app",
+    #"whrt_whitelabel.utils.add_cors_config",
 
         
 ]
