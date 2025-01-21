@@ -37,21 +37,7 @@ def install_erpnext():
 
     
 
-    # Install dependencies from requirements.txt
-    requirements_path = os.path.join(erpnext_path, 'requirements.txt')
-    if os.path.exists(requirements_path):
-        
-        try:
-            subprocess.check_call(
-                ['pip', 'install', '-r', requirements_path],
-                env=os.environ
-            )
-            
-        except subprocess.CalledProcessError as e:
-            
-            return False
-    else:
-        print(f"requirements.txt not found at {requirements_path}. Skipping dependency installation.")
+    
 
     # Check if ERPNext is already installed on the site
     lock_path = os.path.join(site, "locks", "install_app.lock")
