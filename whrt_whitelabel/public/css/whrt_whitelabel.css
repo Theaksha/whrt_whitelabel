@@ -14,10 +14,7 @@ for-login .page-card, .for-forgot .page-card, .for-login-with-email-link .page-c
 /* Override ERPNext and Frappe logos */
 .navbar-logo, .app-logo, .desktop-icon img, .footer-logo img {
     content: url('https://i0.wp.com/profitking.in/wp-content/uploads/2024/05/profitking_logo-removebg-preview-transformed.png?w=2000&ssl=1') !important;
-    width: auto !important;
-    height: auto !important;
-    max-width: 100% !important;
-    max-height: 100% !important;
+    
 }
 
 body{
