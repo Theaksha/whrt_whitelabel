@@ -3,7 +3,7 @@ import csv
 import os
 from tqdm import tqdm  # Import tqdm for progress bar
 import subprocess
-import json  # Im
+import json  # Import json for any JSON operations
 
 
 def install_erpnext():
@@ -11,7 +11,6 @@ def install_erpnext():
     bench_root = os.getenv("BENCH_REPO")
 
     if not bench_root:
-        
         bench_root = os.path.abspath(os.path.join(os.getcwd(), ".."))
 
     if not bench_root:
@@ -21,23 +20,16 @@ def install_erpnext():
     erpnext_path = os.path.join(bench_root, 'apps', 'erpnext')
 
     if not os.path.exists(erpnext_path):
-       
         try:
             subprocess.check_call(
                 ['bench', 'get-app', 'erpnext', 'https://github.com/frappe/erpnext.git'],
                 cwd=bench_root,
                 env=os.environ
             )
-            
         except subprocess.CalledProcessError as e:
-            
             return False
     else:
         print("ERPNext already exists in the apps directory.")
-
-    
-
-    
 
     # Check if ERPNext is already installed on the site
     lock_path = os.path.join(site, "locks", "install_app.lock")
@@ -49,26 +41,20 @@ def install_erpnext():
 
         # Remove the lock file if it exists
         if os.path.exists(lock_path):
-            
             os.remove(lock_path)
 
         # Install ERPNext using bench
         try:
-            
             subprocess.check_call(
-                ['bench', '--site', site, 'install-app', 'erpnext','--force'],
+                ['bench', '--site', site, 'install-app', 'erpnext', '--force'],
                 env=os.environ  # Pass the environment to the subprocess
             )
-            
         except subprocess.CalledProcessError as e:
-            
             return
 
 
-
-
 def setup_login_page():
-	navbar_settings = frappe.get_single("Navbar Settings")
+    navbar_settings = frappe.get_single("Navbar Settings")
     navbar_settings.app_logo = "https://i0.wp.com/profitking.in/wp-content/uploads/2024/05/profitking_logo-removebg-preview-transformed.png?w=2000&ssl=1"
     navbar_settings.save()
     frappe.db.set_value("Website Settings", "Website Settings", "login_page", "pos")
@@ -85,7 +71,6 @@ def create_or_get_item_group(item_group_name):
         })
         item_group.insert(ignore_permissions=True)
         frappe.db.commit()
-        
 
 
 def create_or_get_uom(uom_name):
@@ -127,10 +112,8 @@ def create_or_get_item(item_code, item_name, item_group, stock_uom, standard_rat
         })
         item.insert(ignore_permissions=True)
         frappe.db.commit()
-        
         return item
     else:
-       
         return None
 
 
@@ -169,7 +152,6 @@ def load_demo_data():
                     frappe.log_error(message=f"Error processing item {row.get('item_code')}: {e}", title="Demo Data Item Error")
     except Exception as e:
         frappe.log_error(message=f"Error loading demo data: {e}", title="Demo Data Loading Error")
-
 
 
 if __name__ == "__main__":
