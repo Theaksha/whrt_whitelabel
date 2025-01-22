@@ -14,7 +14,7 @@ app_publisher = "WhiteRaysTechnology"
 app_description = "Whrt Whitelabel"
 app_email = "akshaymaske517@gmail.com"
 app_license = "mit"
-app_logo_url = '/assets/whrt_whitelabel/images/login_logo.jpg'
+app_logo_url = 'https://teams.live.com/l/message/19:uni01_pjl4mksb4hwdy32t4adew2xteqhxh5ruobvde2tp2hjb7mtxscca@thread.v2/1737548351706?context=%7B%22contextType%22%3A%22chat%22%7D'
 
 
 
@@ -82,8 +82,8 @@ app_include_js = "/assets/whrt_whitelabel/js/whrt_whitelabel.js"
 # 	"Role": "home_page"
 # }
 website_context = {
-    "favicon": frappe.db.get_single_value('Navbar Settings', 'app_logo') or "/assets/whrt_whitelabel/images/login_logo.jpg",
-    "splash_image": frappe.db.get_single_value('Navbar Settings', 'app_logo') or "/assets/whrt_whitelabel/images/login_logo.jpg"
+    "favicon": frappe.db.get_single_value('Navbar Settings', 'app_logo') or app_logo_url,
+    "splash_image": frappe.db.get_single_value('Navbar Settings', 'app_logo') or app_logo_url
 }
 
 
