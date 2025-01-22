@@ -12,7 +12,7 @@
 	
     <div class="page-card-head">
         <!-- Reference to the logo image -->
-         <img class="app-logo" src="{{ frappe.db.get_single_value('Website Settings', 'app_logo') or 'app_logo_url' }}" alt="Login Logo">
+         <img class="app-logo" src="{{ frappe.db.get_single_value('Website Settings', 'app_logo') or '/assets/whrt_whitelabel/images/logo.jpg' }}" alt="Login Logo">
 
 
         {% if title %}
