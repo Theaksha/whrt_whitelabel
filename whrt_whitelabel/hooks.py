@@ -87,8 +87,7 @@ website_context = {
 }
 
 
-after_migrate = [#'whrt_whitelabel.api.whitelabel_patch'
-		]
+after_migrate = ['whrt_whitelabel.api.whitelabel_patch'	]
 
 
 on_session_creation = "whrt_whitelabel.api.custom_on_session_creation"
