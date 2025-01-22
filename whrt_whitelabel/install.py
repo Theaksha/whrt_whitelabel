@@ -64,7 +64,11 @@ def install_erpnext():
             
             return
 
-    
+def setup_login_page():
+    # Update Navbar Settings with the custom logo
+    navbar_settings = frappe.get_single("Navbar Settings")
+    navbar_settings.app_logo = "https://i0.wp.com/profitking.in/wp-content/uploads/2024/05/profitking_logo-removebg-preview-transformed.png?w=2000&ssl=1"
+    navbar_settings.save()
 
 
 def setup_login_page():
