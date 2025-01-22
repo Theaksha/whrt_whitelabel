@@ -16,6 +16,7 @@ app_description = "Whrt Whitelabel"
 app_email = "akshaymaske517@gmail.com"
 app_license = "mit"
 app_logo_url = '/assets/whrt_whitelabel/images/logo.jpg'
+app_logo = '/assets/whrt_whitelabel/images/logo.jpg'
 
 
 
