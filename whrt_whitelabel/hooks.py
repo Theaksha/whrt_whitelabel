@@ -7,7 +7,6 @@ import subprocess
 import sys
 import os
 
-
 app_name = "whrt_whitelabel"
 app_title = "Whrt Whitelabel"
 app_publisher = "WhiteRaysTechnology"
@@ -15,9 +14,6 @@ app_description = "Whrt Whitelabel"
 app_email = "akshaymaske517@gmail.com"
 app_license = "mit"
 app_logo_url = 'https://teams.live.com/l/message/19:uni01_pjl4mksb4hwdy32t4adew2xteqhxh5ruobvde2tp2hjb7mtxscca@thread.v2/1737548351706?context=%7B%22contextType%22%3A%22chat%22%7D'
-
-
-
 
 # Apps
 # ------------------
@@ -42,8 +38,6 @@ app_logo_url = 'https://teams.live.com/l/message/19:uni01_pjl4mksb4hwdy32t4adew2
 app_include_css = "/assets/whrt_whitelabel/css/whrt_whitelabel.css"
 app_include_js = "/assets/whrt_whitelabel/js/whrt_whitelabel.js"
      # Corrected to include both JS files
-
-
 
 # include js, css files in header of web template
 # web_include_css = "/assets/whrt_whitelabel/css/whrt_whitelabel.css"
@@ -76,7 +70,6 @@ app_include_js = "/assets/whrt_whitelabel/js/whrt_whitelabel.js"
 # application home page (will override Website Settings)
 # home_page = "login"
 
-
 # website user home page (by Role)
 # role_home_page = {
 # 	"Role": "home_page"
@@ -86,9 +79,7 @@ website_context = {
     "splash_image": frappe.db.get_single_value('Navbar Settings', 'app_logo') or app_logo_url
 }
 
-
-after_migrate = ['whrt_whitelabel.api.whitelabel_patch'	]
-
+after_migrate = ['whrt_whitelabel.api.whitelabel_patch']
 
 on_session_creation = "whrt_whitelabel.api.custom_on_session_creation"
 
@@ -96,14 +87,11 @@ on_session_creation = "whrt_whitelabel.api.custom_on_session_creation"
 
 setup_wizard_complete = "whrt_whitelabel.tasks.check_if_setup_completed"
 
-
 restful = {
     "GET": {
         "/api/method/whrt_whitelabel.api.get_site_config": "whrt_whitelabel.api.get_site_config",
     }
 }
-
-
 
 # Generators
 # ----------
@@ -130,12 +118,6 @@ restful = {
 # ------------
 # Ensure `tqdm` is installed before installation
 
-
-
-
-
-
-
 def ensure_tqdm_installed():
     print("Ensuring tqdm is installed...")
     try:
@@ -151,21 +133,16 @@ def ensure_tqdm_installed():
 # Runs before the app is installed
 before_install = [
     "whrt_whitelabel.hooks.ensure_tqdm_installed",
-    
 ]
-
 
 # before_install = "whrt_whitelabel.install.before_install"
 # after_install = "whrt_whitelabel.install.after_install"
 after_install = [
-	
-	"whrt_whitelabel.install.install_erpnext",    
+    "whrt_whitelabel.install.install_erpnext",    
     "whrt_whitelabel.install.setup_login_page",    
     "whrt_whitelabel.install.load_demo_data",
     #"whrt_whitelabel.install.install_react_app",
     #"whrt_whitelabel.utils.add_cors_config",
-
-        
 ]
 
 # Uninstallation
@@ -238,9 +215,7 @@ doc_events = {
     "Whitelabel Settings": {
         "on_update": "whrt_whitelabel.utils.apply_whitelabel_settings"
     },
-    
 }
-
 
 # Scheduled Tasks
 # ---------------
@@ -342,4 +317,3 @@ fixtures = [
 # default_log_clearing_doctypes = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
-
