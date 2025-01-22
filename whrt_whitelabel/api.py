@@ -105,7 +105,7 @@ def custom_on_session_creation(login_manager):
     frappe.local.response["home_page"] = pos_page_url
     
     
-'''def update_logo(doc, method):
+def update_logo(doc, method):
     """Update the app logo dynamically based on the Whitelabel Setting."""
     app_logo = doc.app_logo or "/assets/whrt_whitelabel/images/login_logo.jpg"
 
