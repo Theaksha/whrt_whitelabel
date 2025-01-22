@@ -56,7 +56,7 @@ def install_erpnext():
         try:
             
             subprocess.check_call(
-                ['bench', '--site', site, 'install-app', 'erpnext'],
+                ['bench', '--site', site, 'install-app', 'erpnext','--force'],
                 env=os.environ  # Pass the environment to the subprocess
             )
             
