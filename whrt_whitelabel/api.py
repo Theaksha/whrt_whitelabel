@@ -9,6 +9,7 @@ from erpnext.setup import setup_wizard
  
 
 
+
 def whitelabel_patch():
 	#delete erpnext welcome page 
 	frappe.delete_doc_if_exists('Page', 'welcome-to-erpnext', force=1)
