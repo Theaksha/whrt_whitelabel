@@ -107,7 +107,7 @@ def custom_on_session_creation(login_manager):
     
 def update_logo(doc, method):
     """Update the app logo dynamically based on the Whitelabel Setting."""
-    app_logo = doc.app_logo or "/assets/whrt_whitelabel/images/login_logo.jpg"
+    app_logo = doc.app_logo or "/assets/whrt_whitelabel/images/logo.jpg"
 
     # Update Website Settings
     if frappe.db.exists("Website Settings"):
@@ -118,7 +118,7 @@ def update_logo(doc, method):
     if frappe.db.exists("Navbar Settings"):
         frappe.db.set_value("Navbar Settings", "Navbar Settings", "app_logo", app_logo)
 
-    frappe.db.commit()'''
+    frappe.db.commit()
     
 #for pos-frontend 
 
