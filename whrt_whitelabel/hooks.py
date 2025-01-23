@@ -83,8 +83,8 @@ app_include_js = "/assets/whrt_whitelabel/js/whrt_whitelabel.js"
 # 	"Role": "home_page"
 # }
 website_context = {
-    "favicon": frappe.db.get_single_value('Navbar Settings', 'app_logo') or "/assets/whrt_whitelabel/images/login_logo.jpg",
-    "splash_image": frappe.db.get_single_value('Navbar Settings', 'app_logo') or "/assets/whrt_whitelabel/images/login_logo.jpg"
+    "favicon": frappe.db.get_single_value('Navbar Settings', 'app_logo') or "/assets/whrt_whitelabel/images/logo.jpg",
+    "splash_image": frappe.db.get_single_value('Navbar Settings', 'app_logo') or "/assets/whrt_whitelabel/images/logo.jpg"
 }
 
 
