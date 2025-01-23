@@ -3,17 +3,13 @@
 {% block head_include %}
   <!-- Include the custom CSS file -->
   <link rel="stylesheet" href="{{ '/assets/whrt_whitelabel/css/whrt_whitelabel.css' }}">
-  
 {% endblock %}
 
 {% block page_content %}
-
     {% macro logo_section(title=null) %}
-	
     <div class="page-card-head">
         <!-- Reference to the logo image -->
-         <img class="app-logo" src="{{ frappe.db.get_single_value('Website Settings', 'app_logo') or '/assets/whrt_whitelabel/images/logo.jpg' }}" alt="Login Logo">
-
+        <img class="app-logo" src="{{ frappe.db.get_single_value('Website Settings', 'app_logo') or '/assets/whrt_whitelabel/images/pk.png' }}" alt="Login Logo">
 
         {% if title %}
         <h4>{{ _(title) }}</h4>
@@ -27,11 +23,60 @@
 
     <!-- Include the rest of the login content -->
     <div class="login-content page-card">
+        <!-- Error message placeholder -->
+        <div id="login-error-message" class="alert alert-danger" style="display: none;"></div>
+
         <form class="form-signin form-login" role="form">
             {{ email_login_body() }}
         </form>
     </div>
 
+    <!-- Inline JavaScript for login error handling -->
+    <script>
+    frappe.ready(function() {
+        console.log("Login script loaded."); // Debugging: Ensure script is loaded
+
+        // Listen for login form submission
+        $('.form-login').on('submit', function(e) {
+            e.preventDefault(); // Prevent default form submission
+            console.log("Form submitted."); // Debugging: Ensure form submission is intercepted
+
+            // Clear any previous error messages
+            $('#login-error-message').hide().text('');
+            console.log("Error message cleared."); // Debugging: Ensure error message is cleared
+
+            // Get the username and password
+            const username = $('#login_email').val();
+            const password = $('#login_password').val();
+            console.log("Username:", username, "Password:", password); // Debugging: Log credentials
+
+            // Submit the form via AJAX
+            $.ajax({
+                url: '/api/method/login',
+                type: 'POST',
+                data: {
+                    usr: username,
+                    pwd: password
+                },
+                success: function(response) {
+                    console.log("Login successful. Redirecting to /desk."); // Debugging: Ensure redirection works
+                    window.location.href = '/desk';
+                },
+                error: function(xhr) {
+                    console.log("Login failed. Response:", xhr.responseJSON); // Debugging: Log the error response
+                    const errorMessage = xhr.responseJSON.message || 'An error occurred. Please try again.';
+                    if (errorMessage.includes('Invalid login credentials')) {
+                        $('#login-error-message').text('Wrong username or password.').show();
+                        console.log("Displaying error message."); // Debugging: Ensure error message is shown
+                    } else {
+                        $('#login-error-message').text(errorMessage).show();
+                        console.log("Displaying generic error message."); // Debugging: Ensure generic error is shown
+                    }
+                }
+            });
+        });
+    });
+    </script>
 {% endblock %}
 
 {% block footer %}
@@ -40,8 +85,7 @@
             <div class="footer-logo-extension">
                 <div class="row">
                     <div class="text-left col-md-6"></div>
-                    <div class="text-right col-md-6">
-                        
+                    <div class="text-right col-md-6"></div>
                 </div>
             </div>
             <div class="footer-links">
