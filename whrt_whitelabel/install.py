@@ -51,7 +51,28 @@ def install_erpnext():
             )
         except subprocess.CalledProcessError as e:
             return
-
+def setup_navbar_logo():
+    try:
+        print("Fetching Navbar Settings...")
+        navbar_settings = frappe.get_single("Navbar Settings")
+        print(f"Current Navbar Logo: {navbar_settings.app_logo}")
+        
+        print("Setting new logo path...")
+        navbar_settings.app_logo = "/assets/whrt_whitelabel/images/pk.png"
+        
+        print("Saving Navbar Settings...")
+        navbar_settings.save()
+        print("Navbar Settings saved successfully.")
+        
+        # Verify the updated logo
+        updated_settings = frappe.get_single("Navbar Settings")
+        print(f"Updated Navbar Logo: {updated_settings.app_logo}")
+    
+    except Exception as e:
+        print(f"An error occurred while setting up the navbar logo: {str(e)}")
+        print("Traceback details:")
+        import traceback
+        traceback.print_exc()  # This will print the full traceback for debugging 
 
 def setup_login_page():
     navbar_settings = frappe.get_single("Navbar Settings")
