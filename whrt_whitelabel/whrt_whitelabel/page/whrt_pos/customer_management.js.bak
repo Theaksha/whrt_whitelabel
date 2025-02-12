@@ -1,0 +1,116 @@
+// customer_management.js
+// Customer search functionality
+customer_search_bar.find('.customer-search-input').on('input', function () {
+    const search_term = $(this).val();
+    console.log("Search term:", search_term); // Debugging: Log the search term
+
+    if (search_term.length > 1) {
+        frappe.call({
+            method: 'whrt_whitelabel.api.search_customers',
+            args: {
+                search_term: search_term // Pass the search_term directly
+            },
+            callback: function (response) {
+                console.log("API Response:", response); // Debugging: Log the entire response
+
+                if (response.message) {
+                    const customers = response.message;
+
+                    // Ensure customers is an array
+                    if (!Array.isArray(customers)) {
+                        console.error("API response is not an array:", customers);
+                        frappe.msgprint("Invalid response from the server. Please try again.");
+                        return;
+                    }
+
+                    const customer_dropdown = $('<div class="customer-dropdown"></div>').css({
+                        'position': 'absolute',
+                        'background': '#fff',
+                        'border': '1px solid #ddd',
+                        'width': '100%',
+                        'max-height': '200px',
+                        'overflow-y': 'auto',
+                        'z-index': '1000',
+                        'margin-top': '5px', // Add margin to separate from the input
+                        'box-shadow': '0px 4px 10px rgba(0, 0, 0, 0.1)' // Add shadow for better visibility
+                    });
+
+                    // Clear previous dropdown
+                    $('.customer-dropdown').remove();
+
+                    customers.forEach(customer => {
+                        const customer_option = $(`
+                            <div class="customer-option" style="padding: 10px; cursor: pointer; border-bottom: 1px solid #ddd;">
+                                ${customer.customer_name} (${customer.mobile_no || 'No mobile number'})
+                            </div>
+                        `).on('click', function () {
+                            selected_customer = customer.name;
+                            customer_search_bar.find('.customer-search-input').val(customer.customer_name);
+                            customer_dropdown.remove();
+                        });
+
+                        customer_dropdown.append(customer_option);
+                    });
+
+                    // Append dropdown below the search bar
+                    customer_search_bar.append(customer_dropdown);
+                }
+            },
+            error: function (err) {
+                console.error("API Error:", err); // Debugging: Log API errors
+                frappe.msgprint("An error occurred while searching for customers. Please check your network connection.");
+            }
+        });
+    } else {
+        // Clear dropdown if search term is too short
+        $('.customer-dropdown').remove();
+    }
+});
+
+// Add new customer functionality
+customer_search_bar.find('.add-customer-btn').on('click', function () {
+    const customer_name = customer_search_bar.find('.customer-search-input').val();
+    if (!customer_name) {
+        frappe.msgprint("Please enter a customer name.");
+        return;
+    }
+
+    // Prompt for mobile number
+    frappe.prompt([
+        {
+            fieldname: 'mobile_no',
+            label: __('Mobile No'),
+            fieldtype: 'Data',
+            reqd: 1, // Make mobile number mandatory
+            description: 'Enter the customer\'s mobile number.'
+        }
+    ], function (values) {
+        const mobile_no = values.mobile_no;
+
+        frappe.call({
+            method: 'whrt_whitelabel.api.set_customer_info',
+            args: {
+                doc: {
+                    doctype: 'Customer',
+                    customer_name: customer_name,
+                    mobile_no: mobile_no, // Include mobile number
+                    customer_type: 'Individual',
+                    customer_group: 'Commercial',
+                    territory: 'All Territories'
+                }
+            },
+            callback: function (response) {
+                if (response.message) {
+                    frappe.msgprint("Customer added successfully!");
+                    selected_customer = response.message.name; // Set the new customer as selected
+                    customer_search_bar.find('.customer-search-input').val(response.message.customer_name);
+                } else {
+                    frappe.msgprint("Failed to add customer. Please try again.");
+                }
+            },
+            error: function (err) {
+                frappe.msgprint("An error occurred while adding the customer. Please check your network connection.");
+            }
+        });
+    }, __('Add New Customer'), __('Add'));
+});
