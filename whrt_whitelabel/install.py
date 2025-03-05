@@ -22,7 +22,7 @@ def install_erpnext():
     if not os.path.exists(erpnext_path):
         try:
             subprocess.check_call(
-                ['bench', 'get-app', 'erpnext', 'https://github.com/frappe/erpnext.git'],
+                ['bench', 'get-app', 'erpnext', 'https://github.com/Theaksha/erpnext-version-15.git'],
                 cwd=bench_root,
                 env=os.environ
             )
