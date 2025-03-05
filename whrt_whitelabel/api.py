@@ -1,183 +1,121 @@
 from __future__ import unicode_literals
 import frappe
 import json
-from frappe.utils import floor, flt, today, cint
+from frappe.utils import floor, flt, today, cint, nowdate
 from frappe import _
 from frappe.model.document import Document
 from frappe.utils.background_jobs import enqueue
 from erpnext.setup import setup_wizard
-from frappe.utils import nowdate
- 
-
-
+from frappe.query_builder.functions import Sum, IfNull  # Required for reserved stock calculations
 
 def whitelabel_patch():
-	#delete erpnext welcome page 
-	frappe.delete_doc_if_exists('Page', 'welcome-to-erpnext', force=1)
-	#update Welcome Blog Post
-	if frappe.db.exists("Blog Post", "Welcome"):
-		frappe.db.set_value("Blog Post","Welcome","content","")
-	update_field_label()
-	if cint(get_frappe_version()) >= 13 and not frappe.db.get_single_value('Whitelabel Setting', 'ignore_onboard_whitelabel'):
-		update_onboard_details()
-
+    frappe.delete_doc_if_exists('Page', 'welcome-to-erpnext', force=1)
+    if frappe.db.exists("Blog Post", "Welcome"):
+        frappe.db.set_value("Blog Post", "Welcome", "content", "")
+    update_field_label()
+    if cint(get_frappe_version()) >= 13 and not frappe.db.get_single_value('Whitelabel Setting', 'ignore_onboard_whitelabel'):
+        update_onboard_details()
 
 def update_field_label():
-	"""Update label of section break in employee doctype"""
-	frappe.db.sql("""Update `tabDocField` set label='ERP' where fieldname='erpnext_user' and parent='Employee'""")
+    frappe.db.sql("""Update `tabDocField` set label='ERP' where fieldname='erpnext_user' and parent='Employee'""")
 
 def get_frappe_version():
-	return frappe.db.get_value("Installed Application",{"app_name":"frappe"},"app_version").split('.')[0]
+    return frappe.db.get_value("Installed Application", {"app_name": "frappe"}, "app_version").split('.')[0]
 
 def update_onboard_details():
-	update_onboard_module()
-	update_onborad_steps()
+    update_onboard_module()
+    update_onborad_steps()
 
 def update_onboard_module():
-	onboard_module_details = frappe.get_all("Module Onboarding",filters={},fields=["name"])
-	for row in onboard_module_details:
-		doc = frappe.get_doc("Module Onboarding",row.name)
-		doc.documentation_url = ""
-		doc.flags.ignore_mandatory = True
-		doc.save(ignore_permissions = True)
+    onboard_module_details = frappe.get_all("Module Onboarding", filters={}, fields=["name"])
+    for row in onboard_module_details:
+        doc = frappe.get_doc("Module Onboarding", row.name)
+        doc.documentation_url = ""
+        doc.flags.ignore_mandatory = True
+        doc.save(ignore_permissions=True)
 
 def update_onborad_steps():
-	onboard_steps_details = frappe.get_all("Onboarding Step",filters={},fields=["name"])
-	for row in onboard_steps_details:
-		doc = frappe.get_doc("Onboarding Step",row.name)
-		doc.intro_video_url = ""
-		doc.description = ""
-		doc.flags.ignore_mandatory = True
-		doc.save(ignore_permissions = True)
+    onboard_steps_details = frappe.get_all("Onboarding Step", filters={}, fields=["name"])
+    for row in onboard_steps_details:
+        doc = frappe.get_doc("Onboarding Step", row.name)
+        doc.intro_video_url = ""
+        doc.description = ""
+        doc.flags.ignore_mandatory = True
+        doc.save(ignore_permissions=True)
 
 def boot_session(bootinfo):
-	"""boot session - send website info if guest"""
-	if frappe.session['user']!='Guest':
-
-		bootinfo.whitelabel_setting = frappe.get_doc("Whitelabel Setting","Whitelabel Setting")
+    if frappe.session['user'] != 'Guest':
+        bootinfo.whitelabel_setting = frappe.get_doc("Whitelabel Setting", "Whitelabel Setting")
 
 @frappe.whitelist()
 def ignore_update_popup():
-	if not frappe.db.get_single_value('Whitelabel Setting', 'disable_new_update_popup'):
-		show_update_popup_update()
+    if not frappe.db.get_single_value('Whitelabel Setting', 'disable_new_update_popup'):
+        show_update_popup_update()
 
 @frappe.whitelist()
 def show_update_popup_update():
-	cache = frappe.cache()
-	user  = frappe.session.user
-	update_info = cache.get_value("update-info")
-	if not update_info:
-		return
-
-	updates = json.loads(update_info)
-
-	# Check if user is int the set of users to send update message to
-	update_message = ""
-	if cache.sismember("update-user-set", user):
-		for update_type in updates:
-			release_links = ""
-			for app in updates[update_type]:
-				app = frappe._dict(app)
-				release_links += "<b>{title}</b>: <a href='https://github.com/{org_name}/{app_name}/releases/tag/v{available_version}'>v{available_version}</a><br>".format(
-					available_version = app.available_version,
-					org_name          = app.org_name,
-					app_name          = app.app_name,
-					title             = app.title
-				)
-			if release_links:
-				message = _("New {} releases for the following apps are available").format(_(update_type))
-				update_message += "<div class='new-version-log'>{0}<div class='new-version-links'>{1}</div></div>".format(message, release_links)
-
-	if update_message:
-		frappe.msgprint(update_message, title=_("New updates are available"), indicator='green')
-		cache.srem("update-user-set", user)
-        
- 
+    cache = frappe.cache()
+    user  = frappe.session.user
+    update_info = cache.get_value("update-info")
+    if not update_info:
+        return
+    updates = json.loads(update_info)
+    update_message = ""
+    if cache.sismember("update-user-set", user):
+        for update_type in updates:
+            release_links = ""
+            for app in updates[update_type]:
+                app = frappe._dict(app)
+                release_links += "<b>{title}</b>: <a href='https://github.com/{org_name}/{app_name}/releases/tag/v{available_version}'>v{available_version}</a><br>".format(
+                    available_version=app.available_version,
+                    org_name=app.org_name,
+                    app_name=app.app_name,
+                    title=app.title
+                )
+            if release_links:
+                message = _("New {} releases for the following apps are available").format(_(update_type))
+                update_message += "<div class='new-version-log'>{0}<div class='new-version-links'>{1}</div></div>".format(message, release_links)
+    if update_message:
+        frappe.msgprint(update_message, title=_("New updates are available"), indicator='green')
+        cache.srem("update-user-set", user)
 
 def custom_on_session_creation(login_manager):
-    """
-    Redirect user to the POS page after login
-    """
     user = frappe.session.user
-
-    # Specify the path to the POS page
-    pos_page_url = "/app/point-of-sale"  # Change this to the actual URL of your POS page
-
-    # Redirect to the POS page after login
+    pos_page_url = "/app/point-of-sale"
     frappe.local.response["home_page"] = pos_page_url
-    
-    
 
-def update_logo(doc, method):
-    """Update the app logo dynamically based on the Whitelabel Setting."""
-    app_logo = doc.app_logo or "/assets/whrt_whitelabel/images/logo.jpg"
+# --- POS-Frontend APIs ---
 
-    # Update Website Settings
-    if frappe.db.exists("Website Settings"):
-        frappe.db.set_value("Website Settings", "Website Settings", "app_logo", app_logo)
-        frappe.db.set_value("Website Settings", "Website Settings", "favicon", app_logo)
-
-    # Update Navbar Settings (if used)
-    if frappe.db.exists("Navbar Settings"):
-        frappe.db.set_value("Navbar Settings", "Navbar Settings", "app_logo", app_logo)
-
-    # Update POS Settings (if used)
-    if frappe.db.exists("POS Setting"):
-        pos_settings = frappe.get_all("POS Setting", filters={}, fields=["name"])
-        for pos_setting in pos_settings:
-            frappe.db.set_value("POS Setting", pos_setting.name, "logo", app_logo)
-
-    frappe.db.commit()
-
-# Hook to update logo on save of Whitelabel Setting
-frappe.get_doc("Whitelabel Setting", "Whitelabel Setting").on_update = update_logo
-    
-#for pos-frontend 
-
-
-# For POS-Frontend 
-# frappeAPI.py (Frappe method for handling CORS)
 @frappe.whitelist(allow_guest=True)
 def get_site_url():
-    # Allow CORS for your React app domain
     frappe.local.response["headers"] = {
-        "Access-Control-Allow-Origin": "*",  # You can replace "*" with your React app's domain for more security
+        "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization",
     }
-    site_url = frappe.local.site
-    return site_url
+    return frappe.local.site
 
 @frappe.whitelist(allow_guest=True)
 def verify_pos_login(user, pin):
-    # Verify user has POS role
-    # Check PIN against user document
     if valid:
         return "Success"
     return "Failed"
-    
+
 @frappe.whitelist()
 def get_pos_users(allow_guest=True):
-    return frappe.get_all('User', 
-        filters={'enabled': 1, 'roles': ['like', '%POS User%']},
-        fields=['name', 'full_name']
-    )
-
+    return frappe.get_all('User', filters={'enabled': 1, 'roles': ['like', '%POS User%']}, fields=['name', 'full_name'])
 
 @frappe.whitelist(allow_guest=True)
 def get_pos_profiles():
-    """Fetch POS Profile for the logged-in user."""
     user = frappe.session.user
-    pos_profile = frappe.db.get_value("POS Profile", {"user": user}, "name")
-    
+    pos_profile = frappe.db.get_value("POS Profile", {"owner": user}, "name")
     if pos_profile:
-        return {"pos_profile": pos_profile}
+        return {"name": pos_profile}
     else:
-        return {"pos_profile": None}
+        return []
 
 @frappe.whitelist(allow_guest=True)
 def get_pos_profile_details(pos_profile):
-    """Get payment methods, warehouse, tax template from POS Profile"""
     try:
         pos_profile_doc = frappe.get_doc("POS Profile", pos_profile)
         return {
@@ -190,49 +128,34 @@ def get_pos_profile_details(pos_profile):
         frappe.logger().error(f"Error fetching POS Profile: {str(e)}")
         return {"error": str(e)}
 
+@frappe.whitelist(allow_guest=True)
+def get_pos_profiles_for_company(company):
+    profiles = frappe.get_all("POS Profile", filters={"company": company}, fields=["name"])
+    return profiles
 
-    
 @frappe.whitelist(allow_guest=True)
 def get_products(category_name=None, page=1, limit=20):
-    
-
     try:
-        # Parse page and limit parameters
         page = int(page)
         limit = int(limit)
         offset = (page - 1) * limit
-
-        # Add filters if category_name is provided
         filters = {}
         if category_name:
             filters["item_group"] = category_name
-
-        # Fetch products with pagination
-        products = frappe.get_all(
-            "Item",
-            fields=["name", "item_name", "image", "valuation_rate", "opening_stock"],
-            filters=filters,
-            limit_start=offset,
-            limit_page_length=limit
-        )
-
-        # Count total products for the category
+        products = frappe.get_all("Item", fields=["name", "item_name", "image", "valuation_rate"],
+                                  filters=filters, limit_start=offset, limit_page_length=limit)
         total_count = frappe.db.count("Item", filters=filters)
-
-        # Prepare product list
-        product_list = [
-            {
+        product_list = []
+        for product in products:
+            actual_qty = frappe.db.get_value("Bin", {"item_code": product["name"], "warehouse": "Main Warehouse"}, "actual_qty") or 0
+            product_list.append({
                 'name': product['name'],
                 'item_name': product['item_name'],
                 'image': product['image'],
                 'valuation_rate': product['valuation_rate'],
-                'opening_stock': product['opening_stock']
-            }
-            for product in products
-        ]
-
+                'actual_qty': actual_qty
+            })
         return {"products": product_list, "total_count": total_count}
-
     except Exception as e:
         frappe.logger().error(f"Error in get_products: {str(e)}")
         return {"error": str(e)}
@@ -240,21 +163,12 @@ def get_products(category_name=None, page=1, limit=20):
 @frappe.whitelist(allow_guest=True)
 def get_item_groups():
     try:
-        # Allow Cross-Origin requests
         frappe.local.response["headers"] = {
             "Access-Control-Allow-Origin": "*",
             "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
             "Access-Control-Allow-Headers": "Content-Type, Authorization"
         }
-
-        # Fetch Item Groups
-        item_groups = frappe.get_all(
-            "Item Group",
-            fields=["item_group_name", "parent_item_group", "is_group"],
-            filters={"is_group": 1}  # Optional: Only fetch groups if needed
-        )
-
-        # Prepare response
+        item_groups = frappe.get_all("Item Group", fields=["item_group_name", "parent_item_group", "is_group"])
         item_group_list = []
         for group in item_groups:
             item_group_list.append({
@@ -262,18 +176,16 @@ def get_item_groups():
                 "parent_item_group": group.get("parent_item_group"),
                 "is_group": group.get("is_group")
             })
-
         return item_group_list
-
     except Exception as e:
         frappe.logger().error(f"Error in get_item_groups: {str(e)}")
         return {"error": str(e)}
 
 @frappe.whitelist()
 def search_products(search_term):
-    """Search products by name, barcode, or item code."""
-    frappe.logger().info(f"Search Term Received: {search_term}")  # Debugging: Log the search term
-    return frappe.get_all("Item", filters={"item_name": ["like", f"%{search_term}%"]}, fields=["name", "item_name", "image", "valuation_rate"])
+    frappe.logger().info(f"Search Term Received: {search_term}")
+    return frappe.get_all("Item", filters={"item_name": ["like", f"%{search_term}%"]},
+                            fields=["name", "item_name", "image", "valuation_rate"])
 
 @frappe.whitelist(allow_guest=True)
 def create_order(order_data):
@@ -285,15 +197,11 @@ def create_order(order_data):
 @frappe.whitelist(allow_guest=True)
 def get_order_details(order_id):
     return frappe.get_doc("POS Transaction", order_id)
-    
+
 @frappe.whitelist(allow_guest=True)
 def get_customers():
     try:
-        # Fetch customers
-        customers = frappe.get_all(
-            "Customer",
-            fields=["name", "customer_name"]
-        )
+        customers = frappe.get_all("Customer", fields=["name", "customer_name"])
         return customers
     except Exception as e:
         frappe.logger().error(f"Error in get_customers: {str(e)}")
@@ -301,23 +209,12 @@ def get_customers():
 
 @frappe.whitelist(allow_guest=True)
 def search_customers(search_term=None):
-        """
-        API to search for customers by name.
-        """
-        if not search_term:  # Ensure `search_term` is optional and defaults to None
-            return []
+    if not search_term:
+        return []
+    customers = frappe.get_all("Customer", filters={"customer_name": ["like", f"%{search_term}%"]},
+                                 fields=["name", "customer_name", "mobile_no"], limit_page_length=10)
+    return customers
 
-        customers = frappe.get_all(
-            "Customer",
-            filters={"customer_name": ["like", f"%{search_term}%"]},
-            fields=["name", "customer_name","mobile_no"],
-            limit_page_length=10,
-        )
-        return customers
-
-
-
-        
 @frappe.whitelist(allow_guest=True)
 def add_customer(customer_name):
     try:
@@ -328,113 +225,66 @@ def add_customer(customer_name):
     except Exception as e:
         frappe.logger().error(f"Error in add_customer: {str(e)}")
         return {"error": str(e)}
-        
-'''frappe.whitelist(allow_guest=True)
-def update_loyalty_points(customer, points):
-    try:
-        customer_doc = frappe.get_doc("Customer", customer)
-        if not customer_doc.loyalty_points:
-            customer_doc.loyalty_points = 0
-        customer_doc.loyalty_points += points
-        customer_doc.save()
-        return {"message": f"Loyalty points updated for {customer_doc.customer_name}"}
-    except Exception as e:
-        frappe.logger().error(f"Error updating loyalty points: {str(e)}")
-        return {"error": str(e)}'''
+
+# --------------------------------------------------------------------------
+# POS Invoice & Payment Related Functions
+# --------------------------------------------------------------------------
 
 @frappe.whitelist(allow_guest=True)
-def create_invoice(cart, customer, pos_profile, payments):
-    """
-    Create a Sales Invoice for POS.
-    """
+def create_invoice(cart, customer, pos_profile, payments, taxes_and_charges=None):
     try:
-        frappe.logger().info(f"Received cart data: {cart}")
-        frappe.logger().info(f"Customer: {customer}")
-        frappe.logger().info(f"POS Profile: {pos_profile}")
-        frappe.logger().info(f"Payments: {payments}")
-
+        cart = json.loads(cart)
+        payments = json.loads(payments)
         if not cart:
             frappe.throw("Cart is empty. Cannot create an invoice.")
-
         if not customer:
             frappe.throw("Customer is not selected. Cannot create an invoice.")
-
         if not pos_profile:
             frappe.throw("POS Profile is required for invoice creation.")
-
-        # Convert cart JSON string to Python list
-        cart = json.loads(cart)
-        if not isinstance(cart, list) or len(cart) == 0:
-            frappe.throw("Cart must be a non-empty list.")
-
-        # Convert payments JSON string to Python list
-        payments = json.loads(payments)
-        if not isinstance(payments, list) or len(payments) == 0:
-            frappe.throw("At least one mode of payment is required for POS invoice.")
-
-        # Fetch default warehouse from POS Profile
         default_warehouse = frappe.db.get_value("POS Profile", pos_profile, "warehouse")
-
         if not default_warehouse:
             frappe.throw(f"No warehouse found for POS Profile: {pos_profile}")
-
-        invoice = frappe.new_doc("Sales Invoice")
+        invoice = frappe.new_doc("POS Invoice")
         invoice.customer = customer
         invoice.posting_date = frappe.utils.nowdate()
         invoice.set_posting_time = 1
         invoice.is_pos = 1
         invoice.pos_profile = pos_profile
-
+        invoice.update_stock = 1
+        if taxes_and_charges:
+            invoice.taxes_and_charges = taxes_and_charges
         for item in cart:
-            frappe.logger().info(f"Processing item: {json.dumps(item)}")
-
             if not all(k in item for k in ["name", "quantity", "valuation_rate"]):
                 frappe.throw(f"Invalid item data: {item}")
-
             invoice.append("items", {
-                "item_code": item.get("name"),
-                "qty": item.get("quantity", 1),
-                "rate": item.get("valuation_rate"),
-                "amount": item.get("valuation_rate") * item.get("quantity", 1),
+                "item_code": item["name"],
+                "qty": item["quantity"],
+                "rate": item["valuation_rate"],
+                "amount": item["valuation_rate"] * item["quantity"],
                 "warehouse": default_warehouse,
-                "uom": frappe.db.get_value("Item", item.get("name"), "stock_uom")
+                "uom": frappe.db.get_value("Item", item["name"], "stock_uom")
             })
-
-        # ✅ Process Payments
-        for payment in payments:
-            frappe.logger().info(f"Processing payment: {payment}")
+        for pay in payments:
             invoice.append("payments", {
-                "mode_of_payment": payment["mode_of_payment"],
-                "amount": payment["amount"]
+                "mode_of_payment": pay["mode_of_payment"],
+                "amount": pay["amount"]
             })
-
+        invoice.run_method("set_missing_values")
+        invoice.run_method("calculate_taxes_and_totals")
         invoice.insert()
         invoice.submit()
         frappe.db.commit()
-
-        frappe.logger().info(f"Invoice created successfully: {invoice.name}")
-
         return {"invoice_id": invoice.name}
-
     except Exception as e:
-        frappe.logger().error(f"Error creating Sales Invoice: {str(e)}")
+        frappe.log_error(f"Error creating POS Invoice: {str(e)}")
         return {"error": str(e)}
 
-
-
-
-# Backend Method (Python)
 @frappe.whitelist(allow_guest=True)
 def create_payment_entry(invoice_id, payment_entries):
-    """
-    Create Payment Entry for Sales Invoice.
-    """
     try:
         if not invoice_id or not payment_entries:
             return {"error": "Missing required parameters"}
-
-        invoice = frappe.get_doc("Sales Invoice", invoice_id)
-
+        invoice = frappe.get_doc("POS Invoice", invoice_id)
         for entry in json.loads(payment_entries):
             payment_entry = frappe.new_doc("Payment Entry")
             payment_entry.payment_type = "Receive"
@@ -447,13 +297,10 @@ def create_payment_entry(invoice_id, payment_entries):
             payment_entry.reference_date = nowdate()
             payment_entry.insert()
             payment_entry.submit()
-
         return {"message": "Payment processed successfully!"}
-
     except Exception as e:
         frappe.logger().error(f"Error in creating payment entry: {str(e)}")
         return {"error": str(e)}
-
 
 @frappe.whitelist(allow_guest=True)
 def update_invoice_status(invoice_id=None, status=None):
@@ -462,35 +309,22 @@ def update_invoice_status(invoice_id=None, status=None):
             frappe.throw("Missing invoice_id.")
         if not status:
             frappe.throw("Missing status.")
-        
         invoice = frappe.get_doc("POS Invoice", invoice_id)
         invoice.status = status
         invoice.save()
         frappe.db.commit()
-        
         return f"Invoice {invoice_id} status updated to {status}"
-
     except Exception as e:
         frappe.log_error(f"Error updating invoice status: {str(e)}")
         return {"error": str(e)}
 
 @frappe.whitelist(allow_guest=True)
 def email_invoice(invoice_id):
-    """
-    Email the invoice to the customer.
-    :param invoice_id: The ID of the Sales Invoice.
-    :return: Success message or error.
-    """
     try:
-        # Fetch the Sales Invoice
-        invoice = frappe.get_doc("Sales Invoice", invoice_id)
-
-        # Get customer email
+        invoice = frappe.get_doc("POS Invoice", invoice_id)
         customer_email = frappe.get_value("Customer", invoice.customer, "email_id")
         if not customer_email:
             return {"error": "Customer email not found."}
-
-        # Send email with invoice attachment
         frappe.sendmail(
             recipients=[customer_email],
             subject=f"Invoice {invoice.name}",
@@ -500,46 +334,241 @@ def email_invoice(invoice_id):
                 'filename': f"Invoice_{invoice.name}.pdf"
             }]
         )
-
         return {"message": "Invoice emailed successfully."}
-
     except Exception as e:
         frappe.logger().error(f"Error in emailing invoice: {str(e)}")
         return {"error": str(e)}
 
 @frappe.whitelist(allow_guest=True)
-def reduce_stock(item_code, quantity):
-    """
-    Reduce the stock of an item.
-    :param item_code: The code of the item.
-    :param quantity: The quantity to reduce.
-    :return: Success message or error.
-    """
+def reduce_stock(item_code=None, quantity=None, **kwargs):
+    if item_code is None or quantity is None:
+        frappe.throw("Both item_code and quantity are required.")
     try:
-        # Fetch the Item
-        item = frappe.get_doc("Item", item_code)
-
-        # Reduce the stock
-        item.qty_in_stock -= quantity
-        item.save()
-
-        return {"message": f"Stock reduced for {item.item_name}."}
-
+        qty = cint(quantity)
+        bin_list = frappe.get_all("Bin", filters={"item_code": item_code}, fields=["warehouse"], limit=1)
+        if not bin_list:
+            frappe.throw(f"No Bin record found for item {item_code}")
+        warehouse = bin_list[0].warehouse
+        bin_doc = frappe.get_doc("Bin", {"item_code": item_code, "warehouse": warehouse})
+        bin_doc.actual_qty = (bin_doc.actual_qty or 0) - qty
+        bin_doc.save()
+        return {"message": f"Stock reduced for item {item_code} in warehouse {warehouse}."}
     except Exception as e:
-        frappe.logger().error(f"Error reducing stock: {str(e)}")
+        frappe.log_error(f"Error reducing stock: {str(e)}", "reduce_stock")
         return {"error": str(e)}
-        
+
 @frappe.whitelist()
 def set_customer_info(doc):
-    """Create a new customer."""
-    customer = frappe.get_doc(doc)
-    customer.insert()
-    return customer
+    if isinstance(doc, str):
+        doc = json.loads(doc)
+    new_doc = frappe.get_doc(doc)
+    new_doc.insert(ignore_permissions=True)
+    frappe.db.commit()
+    return new_doc.as_dict()
 
 @frappe.whitelist()
 def update_loyalty_points(customer, points):
-    """Update loyalty points for a customer."""
     customer_doc = frappe.get_doc("Customer", customer)
     customer_doc.loyalty_points = (customer_doc.loyalty_points or 0) + points
     customer_doc.save()
     return f"Added {points} loyalty points to {customer_doc.customer_name}."
+
+@frappe.whitelist(allow_guest=True)
+def calculate_taxes_for_pos_invoice(cart, company, customer, taxes_and_charges=None):
+    cart_data = json.loads(cart) if cart else []
+    if not cart_data:
+        return {
+            "net_total": 0,
+            "total_taxes_and_charges": 0,
+            "grand_total": 0,
+            "taxes": []
+        }
+    fallback_price_list = "Standard Selling"
+    fallback_customer_group = "Commercial"
+    fallback_currency = "USD"
+    original_get_value = frappe.db.get_value
+    if customer == "Walk-in Customer":
+        def fallback_get_value(doctype, name, fieldnames, *args, **kwargs):
+            if doctype == "Customer" and name == "Walk-in Customer" and fieldnames == ["default_price_list", "customer_group", "customer_currency"]:
+                return (fallback_price_list, fallback_customer_group, fallback_currency)
+            return original_get_value(doctype, name, fieldnames, *args, **kwargs)
+        frappe.db.get_value = fallback_get_value
+    try:
+        pos_invoice_doc = frappe.get_doc({
+            "doctype": "POS Invoice",
+            "company": company,
+            "customer": customer,
+            "taxes_and_charges": taxes_and_charges
+        })
+        for item in cart_data:
+            pos_invoice_doc.append("items", {
+                "item_code": item.get("name"),
+                "item_name": item.get("item_name"),
+                "qty": item.get("quantity", 1),
+                "rate": item.get("valuation_rate", 0),
+                "uom": "Nos"
+            })
+        pos_invoice_doc.run_method("set_missing_values")
+        pos_invoice_doc.run_method("calculate_taxes_and_totals")
+        result = {
+            "net_total": pos_invoice_doc.net_total,
+            "total_taxes_and_charges": pos_invoice_doc.total_taxes_and_charges,
+            "grand_total": pos_invoice_doc.grand_total,
+            "taxes": [
+                {
+                    "description": tax.description or tax.account_head,
+                    "tax_amount": tax.tax_amount
+                }
+                for tax in pos_invoice_doc.get("taxes", [])
+            ]
+        }
+    finally:
+        frappe.db.get_value = original_get_value
+    return result
+
+@frappe.whitelist(allow_guest=True)
+def create_pos_opening_entry(company, pos_profile, period_start_date, period_end_date, opening_balance_details):
+    try:
+        details = json.loads(opening_balance_details)
+        entry = frappe.new_doc("POS Opening Entry")
+        entry.period_start_date = period_start_date
+        entry.posting_date = period_start_date
+        entry.company = company
+        entry.pos_profile = pos_profile
+        entry.user = frappe.session.user
+        if details:
+            for d in details:
+                entry.append("balance_details", d)
+        entry.insert()
+        entry.submit()
+        frappe.db.commit()
+        frappe.logger().info(f"POS Opening Entry created: {entry.name}")
+        return {"opening_entry": entry.name}
+    except Exception as e:
+        frappe.logger().error("Error creating POS Opening Entry: " + str(e), exc_info=True)
+        return {"error": str(e)}
+
+@frappe.whitelist(allow_guest=True)
+def create_pos_closing_entry(pos_opening_entry, period_end_date, posting_date, posting_time, pos_transactions, payment_reconciliation, taxes, grand_total, net_total, total_quantity):
+    try:
+        import json
+        opening = frappe.get_doc("POS Opening Entry", pos_opening_entry)
+        closing = frappe.new_doc("POS Closing Entry")
+        closing.period_start_date = opening.period_start_date
+        closing.period_end_date = period_end_date
+        closing.posting_date = posting_date
+        closing.posting_time = posting_time
+        closing.company = opening.company
+        closing.pos_profile = opening.pos_profile
+        closing.user = opening.user
+        closing.pos_opening_entry = pos_opening_entry
+        transactions = json.loads(pos_transactions) if pos_transactions else []
+        for trans in transactions:
+            closing.append("pos_transactions", trans)
+        payments = json.loads(payment_reconciliation) if payment_reconciliation else []
+        for pay in payments:
+            closing.append("payment_reconciliation", pay)
+        tax_details = json.loads(taxes) if taxes else []
+        for tax in tax_details:
+            closing.append("taxes", tax)
+        closing.grand_total = float(grand_total)
+        closing.net_total = float(net_total)
+        closing.total_quantity = float(total_quantity)
+        closing.insert()
+        closing.submit()
+        frappe.db.commit()
+        frappe.logger().info(f"POS Closing Entry created successfully: {closing.name}")
+        return {"closing_entry": closing.name}
+    except Exception as e:
+        frappe.logger().error("Error creating POS Closing Entry: " + str(e), exc_info=True)
+        return {"error": str(e)}
+
+# --------------------------------------------------------------------------
+# Helpers for Accurate Stock Calculation
+# --------------------------------------------------------------------------
+
+@frappe.whitelist()
+def get_bin_qty(item_code, warehouse):
+    bin_qty = frappe.db.get_value("Bin", {"item_code": item_code, "warehouse": warehouse}, "actual_qty")
+    return flt(bin_qty) if bin_qty else 0
+
+@frappe.whitelist()
+def get_pos_reserved_qty(item_code, warehouse):
+    p_inv = frappe.qb.DocType("POS Invoice")
+    p_item = frappe.qb.DocType("POS Invoice Item")
+    query = (
+        frappe.qb.from_(p_inv)
+        .join(p_item)
+        .on(p_inv.name == p_item.parent)
+        .select(Sum(p_item.stock_qty).as_("reserved_qty"))
+        .where(
+            (p_inv.docstatus == 1)
+            & (IfNull(p_inv.consolidated_invoice, "") == "")
+            & (p_item.item_code == item_code)
+            & (p_item.warehouse == warehouse)
+        )
+    )
+    result = query.run(as_dict=True)
+    return flt(result[0].reserved_qty) if result and result[0].reserved_qty else 0
+
+@frappe.whitelist()
+def get_bundle_availability(bundle_item_code, warehouse):
+    if not frappe.db.exists("Product Bundle", {"name": bundle_item_code, "disabled": 0}):
+        return 0
+    product_bundle = frappe.get_doc("Product Bundle", bundle_item_code)
+    bundle_bin_qty = 9999999999
+    for component in product_bundle.items:
+        component_bin_qty = get_bin_qty(component.item_code, warehouse)
+        component_reserved_qty = get_pos_reserved_qty(component.item_code, warehouse)
+        component_available = component_bin_qty - component_reserved_qty
+        possible_bundles = flt(component_available / component.qty)
+        if possible_bundles < bundle_bin_qty:
+            bundle_bin_qty = possible_bundles
+    bundle_reserved_qty = get_pos_reserved_qty(bundle_item_code, warehouse)
+    final_bundle_availability = bundle_bin_qty - bundle_reserved_qty
+    return final_bundle_availability if final_bundle_availability > 0 else 0
+
+@frappe.whitelist()
+def get_stock_availability(item_code, warehouse):
+    is_stock_item = frappe.db.get_value("Item", item_code, "is_stock_item") or 0
+    if not is_stock_item:
+        return (0, False)
+    if frappe.db.exists("Product Bundle", {"name": item_code, "disabled": 0}):
+        return (get_bundle_availability(item_code, warehouse), True)
+    bin_qty = get_bin_qty(item_code, warehouse)
+    reserved_qty = get_pos_reserved_qty(item_code, warehouse)
+    available = bin_qty - reserved_qty
+    return (available, True)
+
+@frappe.whitelist()
+def get_accurate_stock(warehouse):
+    bins = frappe.get_all("Bin", filters={"warehouse": warehouse}, fields=["item_code", "actual_qty"])
+    stock_map = {}
+    for bin_doc in bins:
+        item_code = bin_doc.item_code
+        available_stock, _ = get_stock_availability(item_code, warehouse)
+        stock_map[item_code] = available_stock
+    return stock_map
+    
+@frappe.whitelist()
+def get_sales_taxes_and_charges_details(template_name):
+    """
+    Returns a list of dicts with {type, account_head, tax_rate} 
+    from the Sales Taxes and Charges child table of the given template.
+    """
+    if not template_name:
+        return []
+
+    doc = frappe.get_doc("Sales Taxes and Charges Template", template_name)
+    # doc.taxes is the child table "Sales Taxes and Charges"
+    tax_rules = []
+    for row in doc.taxes:
+        tax_rules.append({
+            "type": row.get("charge_type"),
+            "account_head": row.get("account_head"),
+            "tax_rate": row.get("rate"),
+            "description": row.get("description") or row.get("account_head")
+        })
+
+    return tax_rules
+
