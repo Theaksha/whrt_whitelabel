@@ -1,0 +1,349 @@
+/* Custom Navbar */
+.custom-navbar {
+  background: #f4f4f4;
+  color: #fff;
+  padding: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 1100;
+}
+
+.custom-navbar button {
+  margin: 0 10px;
+}
+
+/* Category Sidebar */
+.category-sidebar {
+  width: 178px;
+  background-color: #f4f4f4;
+  height: calc(100vh - 50px);
+  position: fixed;
+  top: 50px;
+  left: 0;
+  padding: 10px 15px;
+  border-radius: 5px;
+  box-shadow: 2px 0px 5px rgba(0,0,0,0.1);
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+.category-sidebar h3.sidebar-header {
+  font-size: 18px;
+  font-weight: bold;
+  color: #ff6347;
+  margin-bottom: 15px;
+  cursor: pointer;
+}
+
+.category-sidebar ul {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.category-sidebar li {
+  margin-bottom: 10px;
+  padding: 5px 0;
+  font-size: 14px;
+}
+
+/* Content Area */
+.content-area {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  background-color: black;
+  align-items: center;
+  margin-left: 200px;
+  margin-right: 240px;
+  overflow-x: hidden;
+}
+
+/* Product Grid */
+.product-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  width: 100%;
+  margin-top: 20px;
+}
+
+/* Right Section */
+.right-section {
+  width: 230px;
+  margin-right: 10px;
+  background-color: #f9f9f9;
+  height: calc(100vh - 50px);
+  position: fixed;
+  top: 50px;
+  right: 0;
+  padding: 20px;
+  box-shadow: 2px 0px 5px rgba(0,0,0,0.1);
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+/* Customer Search Bar */
+.customer-search-bar {
+  margin-bottom: 20px;
+  position: relative;
+}
+
+.customer-search-bar input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.customer-search-bar button.add-customer-btn {
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  background-color: #28a745;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+}
+
+/* Cart Section */
+.cart-section {
+  margin-top: 20px;
+  padding: 20px;
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.cart-section h3 {
+  margin-bottom: 20px;
+  font-size: 18px;
+  font-weight: bold;
+}
+
+.cart-section .cart-items {
+  margin-bottom: 20px;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.cart-section hr {
+  border: none;
+  border-top: 1px solid #ddd;
+}
+
+.cart-section .cart-summary > div {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+/* Checkout Button */
+.cart-section .checkout-btn {
+  margin-top: 20px;
+  width: 100%;
+  padding: 10px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+/* Product Item */
+.product-item {
+  position: relative;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0px 4px 8px rgba(0,0,0,0.1);
+  background-color: #fff;
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: 350px;
+}
+
+.product-item:hover {
+  transform: scale(1.05);
+}
+
+.product-item img {
+  width: 100%;
+  max-height: 200px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-bottom: 15px;
+}
+
+.stock-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background-color: #28a745;
+  color: #fff;
+  font-weight: bold;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+/* Product Info */
+.product-info {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  text-align: center;
+}
+
+.product-name {
+  font-weight: bold;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.product-price {
+  color: #f60;
+  font-size: 14px;
+}
+
+/* Payment Modal */
+.payment-modal {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+  z-index: 10000;
+  width: 800px;
+  max-width: 90%;
+}
+
+.payment-modal .payment-left,
+.payment-modal .payment-right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.payment-modal .payment-method-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.payment-modal .payment-method-row label {
+  width: 120px;
+}
+
+.payment-modal .numpad {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.payment-modal .process-payment-btn {
+  width: 100%;
+  padding: 10px;
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+.payment-modal .close-payment-modal-btn {
+  width: 100%;
+  padding: 10px;
+  background-color: #dc3545;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+}
+
+/* Order Completion Modal */
+.order-completion-modal {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #fff;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+  z-index: 10001;
+  width: 400px;
+  max-width: 90%;
+}
+
+.order-completion-modal .invoice-summary {
+  margin-bottom: 20px;
+}
+
+.order-completion-modal .invoice-summary h3 {
+  margin: 0;
+}
+
+.order-completion-modal .invoice-summary .items-section {
+  margin: 15px 0;
+}
+
+.order-completion-modal .invoice-summary .totals-section,
+.order-completion-modal .invoice-summary .payments-section {
+  border-top: 1px solid #ddd;
+  padding-top: 10px;
+  margin-top: 10px;
+}
+
+.order-completion-modal button {
+  padding: 10px;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+}
+
+.order-completion-modal .print-receipt-btn {
+  background-color: #ffc107;
+}
+
+.order-completion-modal .email-receipt-btn {
+  background-color: #28a745;
+}
+
+.order-completion-modal .new-order-btn {
+  background-color: #007bff;
+}
+
+/* Media Query for Mobile */
+@media (max-width: 768px) {
+  .category-sidebar,
+  .right-section {
+      position: static !important;
+      width: 100% !important;
+      height: auto !important;
+      box-shadow: none !important;
+      margin: 0 !important;
+  }
+  .content-area {
+      margin-left: 0 !important;
+      margin-right: 0 !important;
+  }
+}
