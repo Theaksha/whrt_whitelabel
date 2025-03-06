@@ -1,4 +1,4 @@
-frappe.pages['whrt_pos'].on_page_load = async function (wrapper) {
+frappe.pages['whrt-pos'].on_page_load = async function (wrapper) {
 
   // ----------------------------
   // IndexedDB Helper Functions
