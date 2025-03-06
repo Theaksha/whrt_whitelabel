@@ -93,7 +93,6 @@ frappe.pages['whrt-pos'].on_page_load = async function (wrapper) {
   // Offline Invoice Storage Function
   // ----------------------------
   async function storeOfflineInvoice(invoicePayload) {
-    // Retrieve the existing offline invoices from IndexedDB (under the key "offline_invoices")
     let offlineInvoices = await getStorage("offline_invoices");
     if (offlineInvoices) {
       try {
@@ -104,97 +103,85 @@ frappe.pages['whrt-pos'].on_page_load = async function (wrapper) {
     } else {
       offlineInvoices = [];
     }
-    // Append the new invoice payload
     offlineInvoices.push(invoicePayload);
-    // Save the updated offline invoices array back to IndexedDB
     await setStorage("offline_invoices", JSON.stringify(offlineInvoices));
   }
-  // Add this function along with your other helper functions (e.g., after storeOfflineInvoice)
-async function offlineReduceStock(cart) {
-  let stockData = await getStorage("stock_mapping");
-  if (stockData) {
-    try {
-      stockData = JSON.parse(stockData);
-    } catch (e) {
+
+  async function offlineReduceStock(cart) {
+    let stockData = await getStorage("stock_mapping");
+    if (stockData) {
+      try {
+        stockData = JSON.parse(stockData);
+      } catch (e) {
+        stockData = {};
+      }
+    } else {
       stockData = {};
     }
-  } else {
-    stockData = {};
-  }
-  // Loop through each cart item and reduce stock
-  cart.forEach(item => {
-    if (stockData[item.name] !== undefined) {
-      stockData[item.name] -= item.quantity;
-      if (stockData[item.name] < 0) {
-        stockData[item.name] = 0;
+    cart.forEach(item => {
+      if (stockData[item.name] !== undefined) {
+        stockData[item.name] -= item.quantity;
+        if (stockData[item.name] < 0) {
+          stockData[item.name] = 0;
+        }
       }
-    }
-  });
-  await setStorage("stock_mapping", JSON.stringify(stockData));
-  // 1) Update the cart side
-  update_cart();
-
-  // 2) Re-render the product grid so the stock badges reflect the new counts
-  //    If your code is showing a particular category, re-run the same load / render steps:
-  renderPage();  // or load_products_by_category(currentCategory); 
-}
+    });
+    await setStorage("stock_mapping", JSON.stringify(stockData));
+    update_cart();
+    renderPage();
+  }
 
   // ----------------------------
   // Offline Invoice Sync Routine
   // ----------------------------
   async function syncOfflineInvoices() {
-  if (!navigator.onLine) return;
-  let offlineInvoices = await getStorage("offline_invoices");
-  if (!offlineInvoices) return;
-  try {
-    offlineInvoices = JSON.parse(offlineInvoices);
-  } catch (e) {
-    console.error("Error parsing offline invoices", e);
-    return;
-  }
-  // Loop through each stored invoice and try syncing
-  for (let i = 0; i < offlineInvoices.length; i++) {
-    let invoicePayload = offlineInvoices[i];
-    // Adjust the taxes_and_charges field if it is a JSON string
-    if (invoicePayload.taxes_and_charges) {
-      try {
-        let taxData = JSON.parse(invoicePayload.taxes_and_charges);
-        if (taxData && taxData.taxes_and_charges) {
-          invoicePayload.taxes_and_charges = taxData.taxes_and_charges;
-        }
-      } catch (e) {
-        // If parsing fails, leave the value as-is
-      }
+    if (!navigator.onLine) return;
+    let offlineInvoices = await getStorage("offline_invoices");
+    if (!offlineInvoices) return;
+    try {
+      offlineInvoices = JSON.parse(offlineInvoices);
+    } catch (e) {
+      console.error("Error parsing offline invoices", e);
+      return;
     }
-    await frappe.call({
-      method: 'whrt_whitelabel.api.create_invoice',
-      args: invoicePayload,
-      callback: function (invoice_response) {
-        if (invoice_response.message && invoice_response.message.invoice_id) {
-          frappe.msgprint("Offline invoice synced: " + invoice_response.message.invoice_id);
-          offlineInvoices.splice(i, 1);
-          i--; // adjust index after removal
-        } else {
-          frappe.msgprint("Failed to sync an offline invoice: " + (invoice_response.error || ""));
+    for (let i = 0; i < offlineInvoices.length; i++) {
+      let invoicePayload = offlineInvoices[i];
+      if (invoicePayload.taxes_and_charges) {
+        try {
+          let taxData = JSON.parse(invoicePayload.taxes_and_charges);
+          if (taxData && taxData.taxes_and_charges) {
+            invoicePayload.taxes_and_charges = taxData.taxes_and_charges;
+          }
+        } catch (e) {
+          // leave value as is
         }
-      },
-      error: function (err) {
-        frappe.msgprint("Server error while syncing offline invoice.");
-        console.error("Sync error", err);
       }
-    });
+      await frappe.call({
+        method: 'whrt_whitelabel.api.create_invoice',
+        args: invoicePayload,
+        callback: function (invoice_response) {
+          if (invoice_response.message && invoice_response.message.invoice_id) {
+            frappe.msgprint("Offline invoice synced: " + invoice_response.message.invoice_id);
+            offlineInvoices.splice(i, 1);
+            i--;
+          } else {
+            frappe.msgprint("Failed to sync an offline invoice: " + (invoice_response.error || ""));
+          }
+        },
+        error: function (err) {
+          frappe.msgprint("Server error while syncing offline invoice.");
+          console.error("Sync error", err);
+        }
+      });
+    }
+    await setStorage("offline_invoices", JSON.stringify(offlineInvoices));
   }
-  await setStorage("offline_invoices", JSON.stringify(offlineInvoices));
-}
-
   
-  // Trigger sync when connection is restored
   window.addEventListener('online', function() {
     frappe.msgprint("Connection restored. Syncing offline invoices...");
     syncOfflineInvoices();
   });
   
-  // Also sync periodically every 30 seconds
   setInterval(() => {
     if (navigator.onLine) {
       syncOfflineInvoices();
@@ -393,23 +380,12 @@ async function offlineReduceStock(cart) {
   async function setupCustomNavbar() {
     var posProfile = (await getStorage("selected_pos_profile")) || "POS Profile";
     var isLoggedIn = frappe.session.user && frappe.session.user !== 'Guest';
-    var navbar = $('<div class="custom-navbar"></div>').css({
-      'background': '#007bff',
-      'color': '#fff',
-      'padding': '10px',
-      'display': 'flex',
-      'align-items': 'center',
-      'justify-content': 'space-between',
-      'position': 'fixed',
-      'top': '0',
-      'width': '100%',
-      'z-index': '1100'
-    });
+    var navbar = $('<div class="custom-navbar"></div>');
     var userDisplay = $('<span class="user-display">POS: ' + posProfile + '</span>');
-    var homeBtn = $('<button class="home-btn" style="margin: 0 10px;">Home</button>');
-    var loginBtn = $('<button class="login-btn" style="margin: 0 10px;">Login</button>');
-    var logoutBtn = $('<button class="logout-btn" style="margin: 0 10px;">Logout</button>');
-    var debugBtn = $('<button class="debug-btn" style="margin: 0 10px;">Debug Items</button>');
+    var homeBtn = $('<button class="home-btn">Home</button>');
+    var loginBtn = $('<button class="login-btn">Login</button>');
+    var logoutBtn = $('<button class="logout-btn">Logout</button>');
+    var debugBtn = $('<button class="debug-btn">Debug Items</button>');
     navbar.append(userDisplay, homeBtn, debugBtn, (isLoggedIn ? logoutBtn : loginBtn));
     $('body').prepend(navbar);
     homeBtn.on('click', function () { window.location.href = '/desk'; });
@@ -526,7 +502,6 @@ async function offlineReduceStock(cart) {
         callback: function (r) {
           if (!r.message) return;
           let pos_profile = r.message;
-          // Retrieve tax details from the Sales Taxes and Charges Template
           let template_name = pos_profile.taxes_and_charges; 
           let tax_category = pos_profile.tax_category;
           frappe.call({
@@ -534,7 +509,6 @@ async function offlineReduceStock(cart) {
             args: { template_name: template_name },
             callback: function(taxRes) {
               let tax_rules = taxRes.message || [];
-              // Build an object that includes the template name, tax category, and detailed tax rules
               let taxData = {
                 taxes_and_charges: template_name,
                 tax_category: tax_category,
@@ -572,12 +546,7 @@ async function offlineReduceStock(cart) {
     let total_taxes_and_charges = 0;
     tax_rules.forEach(rule => {
       let rate = rule.tax_rate || rule.rate || 0;
-      let tax_amount = 0;
-      if (rule.type === "On Net Total") {
-        tax_amount = net_total * (rate / 100);
-      } else {
-        tax_amount = net_total * (rate / 100);
-      }
+      let tax_amount = net_total * (rate / 100);
       taxes.push({
         description: rule.description || rule.account_head || "Tax",
         account_head: rule.account_head,
@@ -599,7 +568,7 @@ async function offlineReduceStock(cart) {
   // (Taxation) Update Cart Function
   // ----------------------------
   async function update_cart() {
-    const cartItems = cart_section.find('.cart-items');
+    const cartItems = $('.cart-items');
     cartItems.empty();
     totalQuantity = 0;
     let netTotal = 0;
@@ -609,10 +578,10 @@ async function offlineReduceStock(cart) {
       const cartItem = createCartItem(item);
       cartItems.append(cartItem);
     });
-    cart_section.find('.cart-quantity').text(totalQuantity);
-    cart_section.find('.net-total').text(netTotal.toFixed(2));
-    cart_section.find('.tax-lines').empty();
-    cart_section.find('.grand-total').text("TBD");
+    $('.cart-quantity').text(totalQuantity);
+    $('.net-total').text(netTotal.toFixed(2));
+    $('.tax-lines').empty();
+    $('.grand-total').text("TBD");
     await setStorage('cart', JSON.stringify(cart));
 
     let company = await getStorage("selected_company");
@@ -630,16 +599,16 @@ async function offlineReduceStock(cart) {
         },
         callback: function(r) {
           if (r && r.message) {
-            cart_section.find('.net-total').text(r.message.net_total.toFixed(2));
+            $('.net-total').text(r.message.net_total.toFixed(2));
             r.message.taxes.forEach(tax_line => {
-              cart_section.find('.tax-lines').append(`
-                <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+              $('.tax-lines').append(`
+                <div class="tax-line">
                   <span>${tax_line.description}</span>
                   <span>₹${(tax_line.tax_amount || 0).toFixed(2)}</span>
                 </div>
               `);
             });
-            cart_section.find('.grand-total').text(r.message.grand_total.toFixed(2));
+            $('.grand-total').text(r.message.grand_total.toFixed(2));
           }
         }
       });
@@ -652,78 +621,23 @@ async function offlineReduceStock(cart) {
       }
       let tax_rules = taxData.rules || [];
       let taxResult = calculateClientSideTaxes(cart, tax_rules);
-      cart_section.find('.net-total').text(taxResult.net_total.toFixed(2));
+      $('.net-total').text(taxResult.net_total.toFixed(2));
       taxResult.taxes.forEach(tax_line => {
-        cart_section.find('.tax-lines').append(`
-          <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+        $('.tax-lines').append(`
+          <div class="tax-line">
             <span>${tax_line.description}</span>
             <span>₹${(tax_line.tax_amount || 0).toFixed(2)}</span>
           </div>
         `);
       });
-      cart_section.find('.grand-total').text(taxResult.grand_total.toFixed(2));
+      $('.grand-total').text(taxResult.grand_total.toFixed(2));
     }
   }
 
   var page = frappe.ui.make_app_page({ parent: wrapper, single_column: true });
-  var category_sidebar = $('<div class="category-sidebar"></div>').appendTo(page.wrapper).css({
-    'width': '178px',
-    'background-color': '#f4f4f4',
-    'height': 'calc(100vh - 50px)',
-    'position': 'fixed',
-    'top': '50px',
-    'left': '0',
-    'padding': '10px 15px',
-    'border-radius': '5px',
-    'box-shadow': '2px 0px 5px rgba(0,0,0,0.1)',
-    'overflow-y': 'auto',
-    'z-index': '1000'
-  });
+  var category_sidebar = $('<div class="category-sidebar"></div>').appendTo(page.wrapper);
   category_sidebar.append('<h3 class="sidebar-header">Categories</h3>');
-  category_sidebar.find('.sidebar-header').css({ 'font-size': '18px', 'font-weight': 'bold', 'color': '#ff6347', 'margin-bottom': '15px', 'cursor': 'pointer' });
-  var content_area = $('<div class="content-area"></div>').appendTo(page.wrapper).css({
-    'padding': '20px',
-    'display': 'flex',
-    'flex-direction': 'column',
-    'background-color': 'black',
-    'align-items': 'center',
-    'margin-left': '200px',
-    'margin-right': '240px',
-    'overflow-x': 'hidden'
-  });
-  content_area.append('<h2 style="color:white;">Whrt POS</h2>');
-  content_area.append('<p style="color:white;">Select a category to view products</p>');
-  
-  const styleTag = document.createElement('style');
-  styleTag.innerHTML = `
-      @media (max-width: 768px) {
-          .category-sidebar, .right-section {
-              position: static !important;
-              width: 100% !important;
-              height: auto !important;
-              box-shadow: none !important;
-              margin: 0 !important;
-          }
-          .content-area {
-              margin-left: 0 !important;
-              margin-right: 0 !important;
-          }
-      }
-  `;
-  document.head.appendChild(styleTag);
-  var product_grid = $('<div class="product-grid"></div>').appendTo(content_area).css({
-    'display': 'grid',
-    'grid-template-columns': 'repeat(auto-fill, minmax(150px, 1fr))',
-    'gap': '10px',
-    'width': '100%',
-    'margin-top': '20px'
-  });
-
-  let currentFilteredItems = [];
-  let currentCategory = "";
-  let currentPage = 1;
-  const itemsPerPage = 24;
-  var formatter = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' });
+  buildCategorySidebarFromLocal();
 
   async function buildCategorySidebarFromLocal() {
     let data = await getStorage("item_groups");
@@ -732,7 +646,7 @@ async function offlineReduceStock(cart) {
       return;
     }
     let item_groups = JSON.parse(data);
-    var menu = $('<ul></ul>').appendTo(category_sidebar).css({ 'list-style-type': 'none', 'padding': '0', 'margin': '0' });
+    var menu = $('<ul></ul>').appendTo(category_sidebar);
     item_groups.forEach(function (group) {
       var list_item = $('<li><a href="#" class="item-group">' + group.item_group_name + '</a></li>');
       menu.append(list_item);
@@ -743,9 +657,21 @@ async function offlineReduceStock(cart) {
         load_products_by_category(group.item_group_name);
       });
     });
-    menu.find('li').css({ 'margin-bottom': '10px', 'padding': '5px 0', 'font-size': '14px' });
   }
-  buildCategorySidebarFromLocal();
+
+  var content_area = $('<div class="content-area"></div>').appendTo(page.wrapper);
+  content_area.append('<h2 style="color:white;">Whrt POS</h2>');
+  content_area.append('<p style="color:white;">Select a category to view products</p>');
+  
+  // Removed the style tag injection for media queries as these are now in whrt_pos.css
+
+  var product_grid = $('<div class="product-grid"></div>').appendTo(content_area);
+
+  let currentFilteredItems = [];
+  let currentCategory = "";
+  let currentPage = 1;
+  const itemsPerPage = 24;
+  var formatter = new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR' });
 
   async function renderPage() {
     let start = (currentPage - 1) * itemsPerPage;
@@ -759,7 +685,7 @@ async function offlineReduceStock(cart) {
     $('.pagination-controls').remove();
     if (totalPages <= 1) return;
     const pagination = $('<div class="pagination-controls"></div>').css({ 'display': 'flex', 'justify-content': 'center', 'margin-top': '20px' });
-    const prev_button = $('<button>Previous</button>').css({ 'margin-right': '10px' });
+    const prev_button = $('<button>Previous</button>');
     const next_button = $('<button>Next</button>');
     if (currentPage === 1) prev_button.prop('disabled', true);
     if (currentPage === totalPages) next_button.prop('disabled', true);
@@ -782,13 +708,7 @@ async function offlineReduceStock(cart) {
     renderPage();
   }
 
-  const search_bar = $('<input type="text" placeholder="Search products..." class="search-bar">').css({
-    'width': '100%',
-    'padding': '10px',
-    'margin-bottom': '20px',
-    'border': '1px solid #ddd',
-    'border-radius': '5px'
-  }).appendTo(content_area);
+  const search_bar = $('<input type="text" placeholder="Search products..." class="search-bar">').appendTo(content_area);
   search_bar.on('input', async function () {
     const search_term = $(this).val().trim().toLowerCase();
     let data = await getStorage("items");
@@ -825,74 +745,21 @@ async function offlineReduceStock(cart) {
     let stock_qty = (stock_mapping && stock_mapping[product.name] !== undefined)
       ? stock_mapping[product.name]
       : 0;
-    const product_item = $('<div class="product-item"></div>').css({
-      'position': 'relative',
-      'border': '1px solid #ddd',
-      'border-radius': '10px',
-      'padding': '15px',
-      'box-shadow': '0px 4px 8px rgba(0, 0, 0, 0.1)',
-      'background-color': '#fff',
-      'text-align': 'center',
-      'cursor': 'pointer',
-      'transition': 'transform 0.3s ease',
-      'display': 'flex',
-      'flex-direction': 'column',
-      'justify-content': 'space-between',
-      'height': '350px'
-    });
-    product_item.hover(
-      function () { $(this).css('transform', 'scale(1.05)'); },
-      function () { $(this).css('transform', 'scale(1)'); }
-    );
+    const product_item = $('<div class="product-item"></div>');
     const product_image = $('<img />')
       .attr('src', product.image)
-      .attr('alt', product.item_name)
-      .css({
-        'width': '100%',
-        'max-height': '200px',
-        'object-fit': 'cover',
-        'border-radius': '8px',
-        'margin-bottom': '15px'
-      });
+      .attr('alt', product.item_name);
     product_item.append(product_image);
     const badge_color = (typeof stock_qty === 'number' && stock_qty > 0) ? '#28a745' : '#dc3545';
     const badge_text  = (typeof stock_qty === 'number' && stock_qty > 0) ? stock_qty : '0';
-    const stock_badge = $('<div class="stock-badge"></div>').css({
-      'position': 'absolute',
-      'top': '10px',
-      'right': '10px',
-      'background-color': badge_color,
-      'color': '#fff',
-      'font-weight': 'bold',
-      'border-radius': '50%',
-      'width': '36px',
-      'height': '36px',
-      'display': 'flex',
-      'align-items': 'center',
-      'justify-content': 'center',
-      'font-size': '14px'
-    }).text(badge_text);
+    const stock_badge = $('<div class="stock-badge"></div>').text(badge_text);
     product_item.append(stock_badge);
-    const product_info = $('<div class="product-info"></div>').css({
-      'display': 'flex',
-      'flex-direction': 'column',
-      'justify-content': 'space-between',
-      'text-align': 'center'
-    });
+    const product_info = $('<div class="product-info"></div>');
     const product_name = $('<div class="product-name"></div>')
-      .text(product.item_name)
-      .css({
-        'font-weight': 'bold',
-        'font-size': '16px',
-        'margin-bottom': '10px'
-      });
+      .text(product.item_name);
     product_info.append(product_name);
     const product_price = $('<div class="product-price"></div>')
-      .text(formatter.format(product.valuation_rate))
-      .css({
-        'color': '#f60',
-        'font-size': '14px'
-      });
+      .text(formatter.format(product.valuation_rate));
     product_info.append(product_price);
     product_item.append(product_info);
     product_item.on('click', function () {
@@ -901,36 +768,24 @@ async function offlineReduceStock(cart) {
     return product_item;
   }
 
-  var right_section = $('<div class="right-section"></div>').appendTo(page.wrapper).css({
-    'width': '230px',
-    'margin-right': '10px',
-    'background-color': '#f9f9f9',
-    'height': 'calc(100vh - 50px)',
-    'position': 'fixed',
-    'top': '50px',
-    'right': '0',
-    'padding': '20px',
-    'box-shadow': '2px 0px 5px rgba(0,0,0,0.1)',
-    'overflow-y': 'auto',
-    'z-index': '1000'
-  });
+  var right_section = $('<div class="right-section"></div>').appendTo(page.wrapper);
   const customer_search_bar = $(`
-    <div class="customer-search-bar" style="margin-bottom: 20px;">
-      <input type="text" class="customer-search-input" placeholder="Search or add customer" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
-      <button class="add-customer-btn" style="width: 100%; padding: 10px; margin-top: 10px; background-color: #28a745; color: #fff; border: none; border-radius: 5px;">Add New Customer</button>
+    <div class="customer-search-bar">
+      <input type="text" class="customer-search-input" placeholder="Search or add customer">
+      <button class="add-customer-btn">Add New Customer</button>
     </div>
   `).appendTo(right_section);
   var cart_section = $(`
-    <div class="cart-section" style="margin-top: 20px; padding: 20px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-      <h3 style="margin-bottom: 20px; font-size: 18px; font-weight: bold;">Item Cart</h3>
-      <div class="cart-items" style="margin-bottom: 20px; max-height: 320px; overflow-y: auto;"></div>
+    <div class="cart-section">
+      <h3>Item Cart</h3>
+      <div class="cart-items"></div>
       <hr>
-      <div class="cart-summary" style="margin-top: 20px;">
-        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+      <div class="cart-summary">
+        <div>
           <span>Total Quantity:</span>
           <span class="cart-quantity">0</span>
         </div>
-        <div style="display: flex; justify-content: space-between; margin-bottom: 10px;">
+        <div>
           <span>Net Total:</span>
           <span>₹<span class="net-total">0.00</span></span>
         </div>
@@ -940,7 +795,7 @@ async function offlineReduceStock(cart) {
           <span>₹<span class="grand-total">TBD</span></span>
         </div>
       </div>
-      <button class="checkout-btn" style="margin-top: 20px; width: 100%; padding: 10px; background-color: #007bff; color: #fff; border: none; border-radius: 5px; font-size: 16px; font-weight: bold;">Checkout</button>
+      <button class="checkout-btn">Checkout</button>
     </div>
   `);
   right_section.append(cart_section);
@@ -966,19 +821,19 @@ async function offlineReduceStock(cart) {
 
   function createCartItem(item) {
     const cartItem = $(`
-      <div style="display: flex; align-items: center; margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 10px;">
-        <img src="${item.image}" alt="${item.name}" style="width: 50px; height: 50px; margin-right: 10px; object-fit: cover; border-radius: 5px;">
-        <div style="flex: 1;">
-          <div style="font-weight: bold;">${item.name}</div>
-          <div style="font-size: 12px; color: #555;">
+      <div class="cart-item">
+        <img src="${item.image}" alt="${item.name}">
+        <div class="cart-item-info">
+          <div class="cart-item-name">${item.name}</div>
+          <div class="cart-item-qty">
             Quantity:
             <button class="decrease-quantity">-</button>
             ${item.quantity}
             <button class="increase-quantity">+</button>
           </div>
         </div>
-        <div style="font-weight: bold; color: #333;">₹${(item.quantity * item.valuation_rate).toFixed(2)}</div>
-        <button class="remove-item" style="margin-left: 10px; color: red;">×</button>
+        <div class="cart-item-total">₹${(item.quantity * item.valuation_rate).toFixed(2)}</div>
+        <button class="remove-item">×</button>
       </div>
     `);
     cartItem.find('.increase-quantity').on('click', async function () {
@@ -1011,56 +866,39 @@ async function offlineReduceStock(cart) {
   // Payment Modal
   // ----------------------------
   const payment_modal = $(`
-    <div class="payment-modal" style="
-      display: none; 
-      position: fixed; 
-      top: 50%; 
-      left: 50%; 
-      transform: translate(-50%, -50%); 
-      background-color: #fff; 
-      padding: 20px; 
-      border-radius: 8px; 
-      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2); 
-      z-index: 10000; 
-      width: 800px;
-      max-width: 90%;
-    ">
+    <div class="payment-modal">
       <div style="display: flex; flex-wrap: wrap; gap: 20px;">
-        <div class="payment-left" style="flex: 1 1 350px; display: flex; flex-direction: column; gap: 10px;">
+        <div class="payment-left">
           <h4>Payment Method</h4>
-          <div class="payment-method-row" style="display: flex; align-items: center; gap: 10px;">
-            <label style="width: 120px;">Cash</label>
-            <input type="number" class="cash-amount" placeholder="0.00" style="flex: 1; padding: 5px;" />
+          <div class="payment-method-row">
+            <label>Cash</label>
+            <input type="number" class="cash-amount" placeholder="0.00" />
           </div>
-          <div class="payment-method-row" style="display: flex; align-items: center; gap: 10px;">
-            <label style="width: 120px;">Credit Card</label>
-            <input type="number" class="credit-card-amount" placeholder="0.00" style="flex: 1; padding: 5px;" />
+          <div class="payment-method-row">
+            <label>Credit Card</label>
+            <input type="number" class="credit-card-amount" placeholder="0.00" />
           </div>
-          <div class="payment-method-row" style="display: flex; align-items: center; gap: 10px;">
-            <label style="width: 120px;">Mobile Payment</label>
-            <input type="number" class="mobile-amount" placeholder="0.00" style="flex: 1; padding: 5px;" />
+          <div class="payment-method-row">
+            <label>Mobile Payment</label>
+            <input type="number" class="mobile-amount" placeholder="0.00" />
           </div>
         </div>
-        <div class="payment-right" style="flex: 1 1 350px; display: flex; flex-direction: column; gap: 20px;">
-          <div style="border: 1px solid #ddd; border-radius: 6px; padding: 10px;">
+        <div class="payment-right">
+          <div class="payment-summary">
             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
               <span>Grand Total:</span>
-              <span class="grand-total-display" style="font-weight: bold;">₹0.00</span>
+              <span class="grand-total-display">₹0.00</span>
             </div>
             <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
               <span>Paid Amount:</span>
-              <span class="paid-amount-display" style="font-weight: bold;">₹0.00</span>
+              <span class="paid-amount-display">₹0.00</span>
             </div>
             <div style="display: flex; justify-content: space-between;">
               <span>To Be Paid:</span>
-              <span class="to-be-paid-display" style="font-weight: bold;">₹0.00</span>
+              <span class="to-be-paid-display">₹0.00</span>
             </div>
           </div>
-          <div class="numpad" style="
-            display: grid; 
-            grid-template-columns: repeat(3, 1fr); 
-            gap: 10px;
-          ">
+          <div class="numpad">
             <button class="numpad-btn" data-value="1">1</button>
             <button class="numpad-btn" data-value="2">2</button>
             <button class="numpad-btn" data-value="3">3</button>
@@ -1074,23 +912,8 @@ async function offlineReduceStock(cart) {
             <button class="numpad-btn" data-value=".">.</button>
             <button class="numpad-btn" data-value="C">C</button>
           </div>
-          <button class="process-payment-btn" style="
-            width: 100%; 
-            padding: 10px; 
-            background-color: #007bff; 
-            color: #fff; 
-            border: none; 
-            border-radius: 5px; 
-            font-weight: bold;
-          ">Pay</button>
-          <button class="close-payment-modal-btn" style="
-            width: 100%; 
-            padding: 10px; 
-            background-color: #dc3545; 
-            color: #fff; 
-            border: none; 
-            border-radius: 5px;
-          ">Close</button>
+          <button class="process-payment-btn">Pay</button>
+          <button class="close-payment-modal-btn">Close</button>
         </div>
       </div>
     </div>
@@ -1115,7 +938,7 @@ async function offlineReduceStock(cart) {
   });
 
   function recalcPaymentTotals() {
-    const grandTotal = parseFloat(cart_section.find('.grand-total').text()) || 0;
+    const grandTotal = parseFloat($('.grand-total').text()) || 0;
     const cashAmt = parseFloat(payment_modal.find('.cash-amount').val()) || 0;
     const ccAmt = parseFloat(payment_modal.find('.credit-card-amount').val()) || 0;
     const mobileAmt = parseFloat(payment_modal.find('.mobile-amount').val()) || 0;
@@ -1125,8 +948,8 @@ async function offlineReduceStock(cart) {
     payment_modal.find('.to-be-paid-display').text("₹" + (toBePaid < 0 ? 0 : toBePaid).toFixed(2));
   }
 
-  cart_section.find('.checkout-btn').on('click', async function () {
-    const grandTotal = parseFloat(cart_section.find('.grand-total').text());
+  $('.checkout-btn').on('click', async function () {
+    const grandTotal = parseFloat($('.grand-total').text());
     if (grandTotal <= 0) {
       frappe.msgprint("Your cart is empty. Please add items to proceed.");
       return;
@@ -1147,7 +970,7 @@ async function offlineReduceStock(cart) {
   });
 
   payment_modal.find('.process-payment-btn').on('click', function () {
-    const grandTotal = parseFloat(cart_section.find('.grand-total').text()) || 0;
+    const grandTotal = parseFloat($('.grand-total').text()) || 0;
     const cashAmt = parseFloat(payment_modal.find('.cash-amount').val()) || 0;
     const ccAmt = parseFloat(payment_modal.find('.credit-card-amount').val()) || 0;
     const mobileAmt = parseFloat(payment_modal.find('.mobile-amount').val()) || 0;
@@ -1169,7 +992,6 @@ async function offlineReduceStock(cart) {
         return;
       }
       
-      // pos_profile_taxation is expected to be stored as a JSON string containing an object with taxes_and_charges, tax_category, and rules.
       let taxation = await getStorage("pos_profile_taxation") || "{}"; 
       
       let invoicePayload = {
@@ -1182,7 +1004,6 @@ async function offlineReduceStock(cart) {
       
       if (!navigator.onLine) {
         await storeOfflineInvoice(invoicePayload);
-		// Reduce stock offline based on the cart items
         await offlineReduceStock(cart);
         frappe.msgprint("No internet connection. Invoice stored offline and stock updated locally. It will be synced when connection is restored.");
         cart = [];
@@ -1244,31 +1065,18 @@ async function offlineReduceStock(cart) {
   });
 
   const order_completion_modal = $(`
-    <div class="order-completion-modal" style="
-      display: none; 
-      position: fixed; 
-      top: 50%; 
-      left: 50%; 
-      transform: translate(-50%, -50%); 
-      background-color: #fff; 
-      padding: 20px; 
-      border-radius: 8px; 
-      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2); 
-      z-index: 10001; 
-      width: 400px;
-      max-width: 90%;
-    ">
-      <div class="invoice-summary" style="margin-bottom: 20px;">
+    <div class="order-completion-modal">
+      <div class="invoice-summary">
         <h3 class="customer-name"></h3>
-        <div class="invoice-id" style="color: #555;"></div>
-        <div class="items-section" style="margin: 15px 0;"></div>
-        <div class="totals-section" style="border-top: 1px solid #ddd; padding-top: 10px;"></div>
-        <div class="payments-section" style="border-top: 1px solid #ddd; padding-top: 10px; margin-top: 10px;"></div>
+        <div class="invoice-id"></div>
+        <div class="items-section"></div>
+        <div class="totals-section"></div>
+        <div class="payments-section"></div>
       </div>
-      <div style="display: flex; flex-direction: column; gap: 10px;">
-        <button class="print-receipt-btn" style="padding: 10px; background-color: #ffc107; color: #fff; border: none; border-radius: 5px;">Print Receipt</button>
-        <button class="email-receipt-btn" style="padding: 10px; background-color: #28a745; color: #fff; border: none; border-radius: 5px;">Email Receipt</button>
-        <button class="new-order-btn" style="padding: 10px; background-color: #007bff; color: #fff; border: none; border-radius: 5px;">New Order</button>
+      <div>
+        <button class="print-receipt-btn">Print Receipt</button>
+        <button class="email-receipt-btn">Email Receipt</button>
+        <button class="new-order-btn">New Order</button>
       </div>
     </div>
   `).appendTo('body');
@@ -1498,7 +1306,6 @@ async function offlineReduceStock(cart) {
     });
   });
 
-  // Offline invoice sync: run every 30 seconds if online.
   setInterval(() => {
     if (navigator.onLine) {
       syncOfflineInvoices();
