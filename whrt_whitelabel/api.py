@@ -7,6 +7,9 @@ from frappe.model.document import Document
 from frappe.utils.background_jobs import enqueue
 from erpnext.setup import setup_wizard
 from frappe.query_builder.functions import Sum, IfNull  # Required for reserved stock calculations
+import logging
+logger = logging.getLogger(__name__)
+
 
 def whitelabel_patch():
     frappe.delete_doc_if_exists('Page', 'welcome-to-erpnext', force=1)
@@ -273,8 +276,32 @@ def create_invoice(cart, customer, pos_profile, payments, taxes_and_charges=None
         invoice.run_method("calculate_taxes_and_totals")
         invoice.insert()
         invoice.submit()
-        frappe.db.commit()
-        return {"invoice_id": invoice.name}
+        # Build a response with the invoice totals and items
+        items_list = []
+        for it in invoice.items:
+            items_list.append({
+                "item_name": it.item_name,
+                "actual_qty": it.qty,
+                "rate": it.rate
+            })
+
+        payments_list = []
+        for p in invoice.payments:
+            payments_list.append({
+                "mode_of_payment": p.mode_of_payment,
+                "amount": p.amount
+            })
+
+        return {
+            "invoice_id": invoice.name,
+            "customer_name": invoice.customer,
+            "net_total": invoice.net_total,
+            "total_taxes_and_charges": invoice.total_taxes_and_charges,
+            "grand_total": invoice.grand_total,
+            "items": items_list,
+            "payments": payments_list
+        }
+
     except Exception as e:
         frappe.log_error(f"Error creating POS Invoice: {str(e)}")
         return {"error": str(e)}
@@ -339,7 +366,7 @@ def email_invoice(invoice_id):
         frappe.logger().error(f"Error in emailing invoice: {str(e)}")
         return {"error": str(e)}
 
-@frappe.whitelist(allow_guest=True)
+@frappe.whitelist()
 def reduce_stock(item_code=None, quantity=None, **kwargs):
     if item_code is None or quantity is None:
         frappe.throw("Both item_code and quantity are required.")
@@ -349,12 +376,13 @@ def reduce_stock(item_code=None, quantity=None, **kwargs):
         if not bin_list:
             frappe.throw(f"No Bin record found for item {item_code}")
         warehouse = bin_list[0].warehouse
-        bin_doc = frappe.get_doc("Bin", {"item_code": item_code, "warehouse": warehouse})
+        bin_doc = frappe.get_doc("Bin", {"item_code": item_code, "warehouse": warehouse}, ignore_permissions=True)
+        logger.debug(f"Reducing stock for item {item_code} in warehouse {warehouse} by {qty}")
         bin_doc.actual_qty = (bin_doc.actual_qty or 0) - qty
-        bin_doc.save()
+        bin_doc.save(ignore_permissions=True)
         return {"message": f"Stock reduced for item {item_code} in warehouse {warehouse}."}
     except Exception as e:
-        frappe.log_error(f"Error reducing stock: {str(e)}", "reduce_stock")
+        logger.error(f"Error reducing stock: {str(e)}", exc_info=True)
         return {"error": str(e)}
 
 @frappe.whitelist()
@@ -449,10 +477,62 @@ def create_pos_opening_entry(company, pos_profile, period_start_date, period_end
         return {"error": str(e)}
 
 @frappe.whitelist(allow_guest=True)
-def create_pos_closing_entry(pos_opening_entry, period_end_date, posting_date, posting_time, pos_transactions, payment_reconciliation, taxes, grand_total, net_total, total_quantity):
+def get_pos_invoices_for_closing(pos_opening_entry, period_end_date):
+    """
+    Fetch POS Invoices for the closing period:
+      - Invoices must belong to the same user and POS profile as the opening entry.
+      - Only submitted invoices (docstatus=1) that have not been consolidated.
+      - Filter by posting timestamp between the opening entry's period_start_date and period_end_date.
+    """
+    opening = frappe.get_doc("POS Opening Entry", pos_opening_entry)
+    start = opening.period_start_date
+    end = period_end_date
+    user = opening.user
+    pos_profile = opening.pos_profile
+    invoices = frappe.db.sql(
+        """
+        SELECT name, posting_date, posting_time, grand_total, net_total, total_qty
+        FROM `tabPOS Invoice`
+        WHERE owner=%s AND docstatus=1 AND pos_profile=%s AND IFNULL(consolidated_invoice,'') = ''
+        """,
+        (user, pos_profile),
+        as_dict=1
+    )
+    filtered = []
+    for inv in invoices:
+        # Convert posting_date to string
+        posting_date_str = inv.posting_date if isinstance(inv.posting_date, str) else str(inv.posting_date)
+        # Convert posting_time to string. If it is a timedelta, format it as HH:MM:SS.
+        if isinstance(inv.posting_time, str):
+            posting_time_str = inv.posting_time
+        else:
+            # Assuming posting_time is a timedelta
+            total_seconds = int(inv.posting_time.total_seconds())
+            hours = total_seconds // 3600
+            minutes = (total_seconds % 3600) // 60
+            seconds = total_seconds % 60
+            posting_time_str = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
+        ts = frappe.utils.get_datetime(posting_date_str + " " + posting_time_str)
+        if frappe.utils.get_datetime(start) <= ts <= frappe.utils.get_datetime(end):
+            try:
+                inv_doc = frappe.get_doc("POS Invoice", inv["name"], ignore_permissions=True)
+                filtered.append(inv_doc)
+            except Exception as e:
+                logger.debug(f"Failed to fetch POS Invoice {inv['name']} with ignore_permissions: {str(e)}")
+    logger.debug(f"get_pos_invoices_for_closing: Found {len(filtered)} invoices between {start} and {end}")
+    return filtered
+
+
+@frappe.whitelist(allow_guest=True)
+def create_pos_closing_entry(pos_opening_entry, period_end_date, posting_date, posting_time,
+                             pos_transactions, payment_reconciliation, taxes, grand_total, net_total, total_quantity):
+    """
+    Create a POS Closing Entry by fetching all relevant POS invoices between the opening entry's start date
+    and the given period_end_date. Aggregated values are computed on the server.
+    """
     try:
-        import json
-        opening = frappe.get_doc("POS Opening Entry", pos_opening_entry)
+        logger.debug("Starting create_pos_closing_entry")
+        opening = frappe.get_doc("POS Opening Entry", pos_opening_entry, ignore_permissions=True)
         closing = frappe.new_doc("POS Closing Entry")
         closing.period_start_date = opening.period_start_date
         closing.period_end_date = period_end_date
@@ -462,27 +542,72 @@ def create_pos_closing_entry(pos_opening_entry, period_end_date, posting_date, p
         closing.pos_profile = opening.pos_profile
         closing.user = opening.user
         closing.pos_opening_entry = pos_opening_entry
-        transactions = json.loads(pos_transactions) if pos_transactions else []
-        for trans in transactions:
-            closing.append("pos_transactions", trans)
-        payments = json.loads(payment_reconciliation) if payment_reconciliation else []
-        for pay in payments:
-            closing.append("payment_reconciliation", pay)
-        tax_details = json.loads(taxes) if taxes else []
-        for tax in tax_details:
-            closing.append("taxes", tax)
-        closing.grand_total = float(grand_total)
-        closing.net_total = float(net_total)
-        closing.total_quantity = float(total_quantity)
-        closing.insert()
+
+        # Fetch relevant POS Invoices
+        invoices = get_pos_invoices_for_closing(pos_opening_entry, period_end_date)
+        logger.debug(f"Fetched {len(invoices)} invoices for closing entry {pos_opening_entry}")
+        
+        pos_transactions_list = []
+        taxes_list = []
+        payments_list = []
+        closing.grand_total = 0
+        closing.net_total = 0
+        closing.total_quantity = 0
+
+        # Aggregate details from each invoice
+        for inv in invoices:
+            pos_transactions_list.append({
+                "pos_invoice": inv.name,
+                "posting_date": inv.posting_date,
+                "grand_total": inv.grand_total,
+                "customer": inv.customer
+            })
+            closing.grand_total += flt(inv.grand_total)
+            closing.net_total += flt(inv.net_total)
+            closing.total_quantity += flt(inv.get("total_qty") or 0)
+
+            # Aggregate tax details
+            for t in inv.get("taxes", []):
+                found = False
+                for tax in taxes_list:
+                    if tax.get("account_head") == t.get("account_head") and tax.get("rate") == t.get("rate"):
+                        tax["amount"] += flt(t.get("tax_amount"))
+                        found = True
+                        break
+                if not found:
+                    taxes_list.append({
+                        "account_head": t.get("account_head"),
+                        "rate": t.get("rate"),
+                        "amount": flt(t.get("tax_amount"))
+                    })
+
+            # Aggregate payment details
+            for p in inv.get("payments", []):
+                found = False
+                for pay in payments_list:
+                    if pay.get("mode_of_payment") == p.get("mode_of_payment"):
+                        pay["expected_amount"] += flt(p.get("amount"))
+                        found = True
+                        break
+                if not found:
+                    payments_list.append({
+                        "mode_of_payment": p.get("mode_of_payment"),
+                        "opening_amount": 0,
+                        "expected_amount": flt(p.get("amount"))
+                    })
+
+        closing.set("pos_transactions", pos_transactions_list)
+        closing.set("payment_reconciliation", payments_list)
+        closing.set("taxes", taxes_list)
+
+        closing.insert(ignore_permissions=True)
         closing.submit()
         frappe.db.commit()
-        frappe.logger().info(f"POS Closing Entry created successfully: {closing.name}")
+        logger.debug(f"POS Closing Entry created successfully: {closing.name}")
         return {"closing_entry": closing.name}
     except Exception as e:
-        frappe.logger().error("Error creating POS Closing Entry: " + str(e), exc_info=True)
+        logger.error("Error creating POS Closing Entry: " + str(e), exc_info=True)
         return {"error": str(e)}
-
 # --------------------------------------------------------------------------
 # Helpers for Accurate Stock Calculation
 # --------------------------------------------------------------------------
@@ -571,4 +696,3 @@ def get_sales_taxes_and_charges_details(template_name):
         })
 
     return tax_rules
-
