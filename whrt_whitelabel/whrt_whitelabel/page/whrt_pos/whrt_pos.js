@@ -300,7 +300,7 @@ frappe.pages['whrt-pos'].on_page_load = async function (wrapper) {
 
   $('.body-sidebar-container').hide();
   $('header.navbar').hide();
-  $('.page-head').hide();
+  
   if (!frappe.session.user || frappe.session.user === 'Guest') {
     window.location.href = '/login?redirect-to=whrt-pos';
     return;
@@ -320,50 +320,78 @@ frappe.pages['whrt-pos'].on_page_load = async function (wrapper) {
   }
 
   // ----------------------------
-  // Logout & POS Closing Entry Creation
+  // Custom functions to update session data
   // ----------------------------
-  async function finalizePosSession() {
-    let savedCart = await getStorage('cart');
-    if (savedCart && JSON.parse(savedCart).length > 0) {
-      // Finalize pending transactions here...
-    }
-    let entriesStr = await getStorage("pos_opening_entries");
-    let openingEntries = entriesStr ? JSON.parse(entriesStr) : [];
-    if (openingEntries.length === 0) {
-      frappe.msgprint("No POS Opening Entry found. Cannot create POS Closing Entry.");
-      finalizeSessionCleanup();
-      return;
-    }
-    let periodEnd = frappe.datetime.get_today() + " 23:59:59";
-    let posting_date = frappe.datetime.get_today();
-    let nowDate = new Date();
-    let posting_time = nowDate.toTimeString().split(" ")[0];
-    openingEntries.forEach(function(pos_opening_entry) {
-      frappe.call({
-        method: 'whrt_whitelabel.api.create_pos_closing_entry',
-        args: {
-          pos_opening_entry: pos_opening_entry,
-          period_end_date: periodEnd,
-          posting_date: posting_date,
-          posting_time: posting_time,
-          pos_transactions: JSON.stringify([]),
-          payment_reconciliation: JSON.stringify([]),
-          taxes: JSON.stringify([]),
-          grand_total: "0",
-          net_total: "0",
-          total_quantity: "0"
-        },
-        callback: function(res) {
-          if (res.message && res.message.closing_entry) {
-            frappe.msgprint("POS Closing Entry created for " + pos_opening_entry + ": " + res.message.closing_entry);
-          } else {
-            frappe.msgprint("Failed to create POS Closing Entry for " + pos_opening_entry + ": " + (res.error || ""));
-          }
-        }
-      });
-    });
-    finalizeSessionCleanup();
+  async function updatePosTransactions(transactions) {
+    await setStorage("pos_transactions", JSON.stringify(transactions));
   }
+
+  async function updatePaymentReconciliation(payments) {
+    await setStorage("payment_reconciliation", JSON.stringify(payments));
+  }
+
+  async function updateTaxes(taxesData) {
+    await setStorage("taxes", JSON.stringify(taxesData));
+  }
+
+  async function updateTotals(grand_total, net_total, total_quantity) {
+    let totals = { grand_total, net_total, total_quantity };
+    await setStorage("totals", JSON.stringify(totals));
+  }
+
+ // ----------------------------
+// Logout & POS Closing Entry Creation
+// ----------------------------
+async function finalizePosSession() {
+  console.debug("Finalizing POS session...");
+  let savedCart = await getStorage('cart');
+  if (savedCart && JSON.parse(savedCart).length > 0) {
+    console.debug("There are pending cart items. Finalizing transactions...");
+    // Optionally process pending transactions
+  }
+  let entriesStr = await getStorage("pos_opening_entries");
+  let openingEntries = entriesStr ? JSON.parse(entriesStr) : [];
+  if (openingEntries.length === 0) {
+    frappe.msgprint("No POS Opening Entry found. Cannot create POS Closing Entry.");
+    finalizeSessionCleanup();
+    return;
+  }
+  let periodEnd = frappe.datetime.get_today() + " 23:59:59";
+  let posting_date = frappe.datetime.get_today();
+  let nowDate = new Date();
+  let posting_time = nowDate.toTimeString().split(" ")[0];
+
+  console.debug("Creating POS Closing Entry with periodEnd:", periodEnd, "posting_date:", posting_date, "posting_time:", posting_time);
+
+  openingEntries.forEach(function(pos_opening_entry) {
+    frappe.call({
+      method: 'whrt_whitelabel.api.create_pos_closing_entry',
+      args: {
+        pos_opening_entry: pos_opening_entry,
+        period_end_date: periodEnd,
+        posting_date: posting_date,
+        posting_time: posting_time,
+        pos_transactions: "[]",
+        payment_reconciliation: "[]",
+        taxes: "[]",
+        grand_total: "0",
+        net_total: "0",
+        total_quantity: "0"
+      },
+      callback: function(res) {
+        if (res.message && res.message.closing_entry) {
+          frappe.msgprint("POS Closing Entry created for " + pos_opening_entry + ": " + res.message.closing_entry);
+          console.debug("POS Closing Entry created:", res.message.closing_entry);
+        } else {
+          frappe.msgprint("Failed to create POS Closing Entry for " + pos_opening_entry + ": " + (res.error || ""));
+          console.error("Failed to create POS Closing Entry for", pos_opening_entry, "Error:", res.error);
+        }
+      }
+    });
+  });
+  finalizeSessionCleanup();
+}
+
 
   function finalizeSessionCleanup() {
     Promise.all([
@@ -1002,15 +1030,54 @@ frappe.pages['whrt-pos'].on_page_load = async function (wrapper) {
         taxes_and_charges: taxation
       };
       
-      if (!navigator.onLine) {
-        await storeOfflineInvoice(invoicePayload);
-        await offlineReduceStock(cart);
-        frappe.msgprint("No internet connection. Invoice stored offline and stock updated locally. It will be synced when connection is restored.");
-        cart = [];
-        update_cart();
-        payment_modal.hide();
-        return;
-      }
+      // Offline branch after payment processing:
+if (!navigator.onLine) {
+    await storeOfflineInvoice(invoicePayload);
+    await offlineReduceStock(cart);
+    frappe.msgprint("No internet connection. Invoice stored offline and stock updated locally. It will be synced when connection is restored.");
+    
+    // Compute offline totals
+	let temp_invoice_id = "OFF-" + new Date().getTime();
+	invoicePayload.temp_id = temp_invoice_id;
+
+    let taxation = await getStorage("pos_profile_taxation") || "{}";
+    let taxData = {};
+    try {
+       taxData = JSON.parse(taxation);
+    } catch (e) {
+       taxData = { rules: [] };
+    }
+    let taxRules = taxData.rules || [];
+    let taxResult = calculateClientSideTaxes(cart, taxRules);
+    
+    // Show order completion modal with offline data
+    showOrderCompletionModal({
+         invoice_id: temp_invoice_id,
+         customer_name: selected_customer,
+         items: cart,
+         net_total: taxResult.net_total,
+         total_taxes_and_charges: taxResult.total_taxes_and_charges,
+         grand_total: taxResult.grand_total,
+         payments: paymentEntries
+    });
+    
+    // Save the computed offline invoice data for printing:
+    window.offline_invoice_data = {
+         invoice_id: temp_invoice_id,
+         customer_name: selected_customer,
+         items: cart,
+         net_total: taxResult.net_total,
+         total_taxes_and_charges: taxResult.total_taxes_and_charges,
+         grand_total: taxResult.grand_total,
+         payments: paymentEntries
+    };
+    
+    cart = [];
+    update_cart();
+    payment_modal.hide();
+    return;
+}
+
       
       frappe.call({
         method: 'whrt_whitelabel.api.create_invoice',
@@ -1085,18 +1152,29 @@ frappe.pages['whrt-pos'].on_page_load = async function (wrapper) {
     order_completion_modal.find('.customer-name').text(data.customer_name || "Walk-in-Customer");
     order_completion_modal.find('.invoice-id').text(data.invoice_id ? `Invoice: ${data.invoice_id}` : "");
     let items_html = "";
-    if (data.items && data.items.length) {
-      data.items.forEach(item => {
-        let line_total = (item.rate || 0) * (item.actual_qty || 1);
-        items_html += `
-          <div style="display: flex; justify-content: space-between;">
-            <span>${item.item_name} (${item.actual_qty} ${item.uom || 'Nos'})</span>
-            <span>₹${line_total.toFixed(2)}</span>
-          </div>
-        `;
-      });
-    }
-    order_completion_modal.find('.items-section').html(items_html);
+	if (data.items && data.items.length) {
+    // Currently something like:
+    // data.items.forEach(item => {
+    //   let line_total = (item.rate || 0) * (item.actual_qty || 1);
+    //   ...
+    // });
+
+    // Remove the above lines and replace with the new snippet:
+    data.items.forEach(item => {
+      const qty = item.quantity || 0;
+      const rate = item.valuation_rate || 0;
+      const line_total = qty * rate;
+      const itemLabel = item.item_name || item.name;
+      items_html += `
+        <div style="display: flex; justify-content: space-between;">
+          <span>${itemLabel} (${qty} Nos)</span>
+          <span>₹${line_total.toFixed(2)}</span>
+        </div>
+      `;
+    });
+  }
+
+  order_completion_modal.find('.items-section').html(items_html);
     let totals_html = `
       <div style="display: flex; justify-content: space-between;">
         <span>Net Total</span>
@@ -1126,25 +1204,103 @@ frappe.pages['whrt-pos'].on_page_load = async function (wrapper) {
     order_completion_modal.find('.payments-section').html(payments_html);
     order_completion_modal.show();
   }
-
-  order_completion_modal.find('.print-receipt-btn').on('click', function () {
-    if (!invoice_id) {
-      frappe.msgprint("No invoice found.");
-      return;
-    }
-    frappe.call({
-      method: 'frappe.utils.print_format.print_html',
-      args: { doctype: 'Sales Invoice', name: invoice_id, format: 'Standard' },
-      callback: function (r) {
-        if (r.message) {
-          let print_window = window.open('', 'Print Invoice');
-          print_window.document.write(r.message);
-          print_window.document.close();
-          print_window.print();
-        }
-      }
+  // New print_receipt function
+function print_receipt() {
+  if (!invoice_id) {
+    frappe.msgprint("No invoice found.");
+    return;
+  }
+  const doctype = "POS Invoice";
+  const print_format = "POS Invoice"; // Use the ERPNext format
+  const letter_head = "null"; // Or adjust as needed
+  const language = frappe.boot.lang || "en";
+  
+  frappe.utils.print(doctype, invoice_id, print_format, letter_head, language);
+  console.debug("Print function called for invoice:", invoice_id);
+}
+function print_offline_receipt(data) {
+    // Build a simple HTML receipt
+    let html = `<html>
+      <head>
+        <title>Offline Invoice Receipt</title>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          h3 { text-align: center; }
+          table { width: 100%; border-collapse: collapse; }
+          table, th, td { border: 1px solid #ddd; }
+          th, td { padding: 8px; text-align: left; }
+        </style>
+      </head>
+      <body>
+        <h3>Offline Invoice Receipt</h3>
+        <p><strong>Invoice:</strong> Offline Invoice</p>
+        <p><strong>Customer:</strong> ${data.customer_name}</p>
+        <h4>Items</h4>
+        <table>
+          <tr>
+            <th>Item Name</th>
+            <th>Quantity</th>
+            <th>Rate</th>
+            <th>Total</th>
+          </tr>`;
+    
+    data.items.forEach(item => {
+        const total = (item.quantity * item.valuation_rate).toFixed(2);
+        html += `<tr>
+                   <td>${item.item_name}</td>
+                   <td>${item.quantity}</td>
+                   <td>${item.valuation_rate}</td>
+                   <td>${total}</td>
+                 </tr>`;
     });
-  });
+    
+    html += `</table>
+        <h4>Totals</h4>
+        <p><strong>Net Total:</strong> ${data.net_total}</p>
+        <p><strong>Total Taxes:</strong> ${data.total_taxes_and_charges}</p>
+        <p><strong>Grand Total:</strong> ${data.grand_total}</p>
+        <h4>Payments</h4>
+        <ul>`;
+    
+    data.payments.forEach(payment => {
+        html += `<li>${payment.mode_of_payment}: ${payment.amount}</li>`;
+    });
+    
+    html += `</ul>
+      </body>
+      </html>`;
+    
+    // Open a new window and write the HTML
+    let printWindow = window.open('', '_blank');
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+}
+
+
+
+ order_completion_modal.find('.print-receipt-btn').on('click', function () {
+    if (!navigator.onLine) {
+  // offline
+  if (window.offline_invoice_data) {
+    print_offline_receipt(window.offline_invoice_data);
+  } else {
+    frappe.msgprint("Offline invoice data not available.");
+  }
+} else {
+  // online
+  if (!invoice_id) {
+    frappe.msgprint("No invoice found.");
+    return;
+  }
+  print_receipt();
+}
+
+});
+
+
 
   order_completion_modal.find('.email-receipt-btn').on('click', function () {
     if (!invoice_id) {
