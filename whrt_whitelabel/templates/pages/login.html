@@ -45,6 +45,14 @@
             $('#login-error-message').hide().text('');
             console.log("Error message cleared."); // Debugging: Ensure error message is cleared
 
+            // Change the submit button text to "Verifying..."
+            var $loginBtn = $(this).find('button[type="submit"], input[type="submit"]');
+            if($loginBtn.is("input")) {
+                $loginBtn.val("Verifying...").prop("disabled", true);
+            } else {
+                $loginBtn.text("Verifying...").prop("disabled", true);
+            }
+
             // Get the username and password
             const username = $('#login_email').val();
             const password = $('#login_password').val();
@@ -72,6 +80,15 @@
                         $('#login-error-message').text(errorMessage).show();
                         console.log("Displaying generic error message."); // Debugging: Ensure generic error is shown
                     }
+                    // Reset button text on error
+                    if($loginBtn.is("input")) {
+                        $loginBtn.val("Login").prop("disabled", false);
+                    } else {
+                        $loginBtn.text("Login").prop("disabled", false);
+                    }
+                },
+                complete: function() {
+                    // Optionally, reset the button if needed (not necessary if success redirects)
                 }
             });
         });
