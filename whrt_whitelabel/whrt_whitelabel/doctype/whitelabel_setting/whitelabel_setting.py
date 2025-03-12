@@ -1,7 +1,6 @@
 # Copyright (c) 2024, WhiteRaysTechnology and contributors
 # For license information, please see license.txt
 
-# import frappe
 from __future__ import unicode_literals
 import frappe
 from frappe.model.document import Document
@@ -33,13 +32,17 @@ class WhitelabelSetting(Document):
                 system_settings_doc.app_name = "Frappe"
 
     def set_theme_attr(self, navbar_settings_doc, website_doc):
+        # Define your default logo path
+        default_logo = "/assets/whrt_whitelabel/images/pk.png"
+    
         if self.application_logo:
-            # Set the logo for both Navbar and Website
+            # Set the logo for both Navbar and Website using the uploaded file
             navbar_settings_doc.app_logo = self.application_logo
             website_doc.app_logo = self.application_logo
             website_doc.splash_image = self.application_logo
+            website_doc.favicon = self.application_logo
             
-            # Update the site configuration
+            # Update the site configuration with the custom logo
             update_site_config("app_logo_url", self.application_logo)
 
             # Clear cache to ensure the new logo is reflected
@@ -53,11 +56,13 @@ class WhitelabelSetting(Document):
             # Ensure the logo is available on the login page
             frappe.local.conf.whitelabel_logo = self.application_logo
         else:
-            # Remove logos if no logo is set
-            navbar_settings_doc.app_logo = ""
-            website_doc.app_logo = ""
-            website_doc.splash_image = ""
-            update_site_config("app_logo_url", False)
+            # Revert to the default logo when no file is attached
+            navbar_settings_doc.app_logo = default_logo
+            website_doc.app_logo = default_logo
+            website_doc.splash_image = default_logo
+            website_doc.favicon = default_logo
+            
+            update_site_config("app_logo_url", default_logo)
 
             # Clear cache
             frappe.clear_cache()
