@@ -52,10 +52,38 @@ def install_erpnext():
         except subprocess.CalledProcessError as e:
             return
 			
-def setup_navbar_logo():
-    navbar_settings = frappe.get_single("Navbar Settings")
-    navbar_settings.app_logo = "/assets/whrt_whitelabel/images/pk.png"
-    navbar_settings.save()
+def setup_website_logo():
+    favicon = "/assets/whrt_whitelabel/images/pk.png"
+    splash_image = "/assets/whrt_whitelabel/images/pk.png"
+    app_logo = "/assets/whrt_whitelabel/images/pk.png"
+    
+    # Retrieve the Website Settings document
+    website_settings = frappe.get_single("Website Settings")
+    
+    # Debug: Print current settings before modification
+    print("Before update:")
+    print("Favicon:", website_settings.get("favicon"))
+    print("Splash Image:", website_settings.get("splash_image"))
+    print("App Logo:", website_settings.get("app_logo"))
+    
+    
+    
+    # Update the website settings with new logo paths
+    website_settings.favicon = favicon
+    website_settings.splash_image = splash_image
+    website_settings.app_logo = app_logo
+    website_settings.save()
+    frappe.db.commit()
+    
+    website_settings.reload()
+    
+    # Debug: Print settings after update
+    print("After update:")
+    print("Favicon:", website_settings.get("favicon"))
+    print("Splash Image:", website_settings.get("splash_image"))
+    print("App Logo:", website_settings.get("app_logo"))
+    
+    print("Website settings updated successfully.")
 
 
  
