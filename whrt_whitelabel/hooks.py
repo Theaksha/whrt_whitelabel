@@ -41,8 +41,8 @@ app_logo_url = '/assets/whrt_whitelabel/images/pk.png'
 
 # include js, css files in header of desk.html
 app_include_css = [
-    "/assets/whrt_whitelabel/css/whrt_whitelabel.css",
-    "/assets/whrt_whitelabel/css/whrt_pos.css"
+    "/assets/whrt_whitelabel/css/whrt_whitelabel.css"
+    #"/assets/whrt_whitelabel/css/whrt_pos.css"
     
 ]
 app_include_js = "/assets/whrt_whitelabel/js/whrt_whitelabel.js"
