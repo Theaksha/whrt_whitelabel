@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Custom POS</title>
+  <!-- Include your CSS files -->
+  <link rel="stylesheet" type="text/css" href="/assets/whrt_whitelabel/css/whrt_whitelabel.css">
+  <link rel="stylesheet" type="text/css" href="/assets/whrt_whitelabel/css/whrt_pos.css">
+</head>
+<body>
+  <!-- Custom POS Page Container -->
+  <div id="pos-wrapper">
+    <!-- Custom Navbar -->
+    <div class="custom-navbar">
+      <span class="user-display">POS: <span id="pos-profile">Loading...</span></span>
+      <button class="home-btn">Home</button>
+      <button class="logout-btn">Logout</button>
+    </div>
+
+    <!-- Main Layout -->
+    <div class="pos-container">
+      <!-- Left Sidebar: Categories -->
+      <div class="category-sidebar">
+        <h3 class="sidebar-header">Categories</h3>
+        <ul id="category-list"></ul>
+      </div>
+
+      <!-- Central Content Area -->
+      <div class="content-area">
+        <h2>Whrt POS</h2>
+        <p>Select a category to view products</p>
+        <input type="text" id="search-bar" placeholder="Search products...">
+        <div class="product-grid" id="product-grid"></div>
+        <div class="pagination-controls" id="pagination-controls"></div>
+      </div>
+
+      <!-- Right Sidebar: Customer & Cart -->
+      <div class="right-section">
+        <div class="customer-search-bar">
+          <input type="text" class="customer-search-input" placeholder="Search or add customer">
+          <button class="add-customer-btn">Add New Customer</button>
+        </div>
+        <div class="cart-section">
+          <h3>Item Cart</h3>
+          <div class="cart-items" id="cart-items"></div>
+          <hr>
+          <div class="cart-summary">
+            <div>
+              <span>Total Quantity:</span>
+              <span class="cart-quantity">0</span>
+            </div>
+            <div>
+              <span>Net Total:</span>
+              <span>₹<span class="net-total">0.00</span></span>
+            </div>
+            <div class="tax-lines" id="tax-lines"></div>
+            <div class="grand-total-section" style="display: flex; justify-content: space-between; margin-top: 10px; font-weight: bold; color: #007bff;">
+              <span>Grand Total:</span>
+              <span>₹<span class="grand-total">TBD</span></span>
+            </div>
+          </div>
+          <button class="checkout-btn">Checkout</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment Modal (initially hidden) -->
+    <div class="payment-modal" id="payment-modal" style="display: none;">
+      <div class="payment-content">
+        <div class="payment-left">
+          <h4>Payment Method</h4>
+          <div class="payment-method-row">
+            <label>Cash</label>
+            <input type="number" class="cash-amount" placeholder="0.00">
+          </div>
+          <div class="payment-method-row">
+            <label>Credit Card</label>
+            <input type="number" class="credit-card-amount" placeholder="0.00">
+          </div>
+          <div class="payment-method-row">
+            <label>Mobile Payment</label>
+            <input type="number" class="mobile-amount" placeholder="0.00">
+          </div>
+        </div>
+        <div class="payment-right">
+          <div class="payment-summary">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+              <span>Grand Total:</span>
+              <span class="grand-total-display">₹0.00</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+              <span>Paid Amount:</span>
+              <span class="paid-amount-display">₹0.00</span>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span>To Be Paid:</span>
+              <span class="to-be-paid-display">₹0.00</span>
+            </div>
+          </div>
+          <div class="numpad">
+            <button class="numpad-btn" data-value="1">1</button>
+            <button class="numpad-btn" data-value="2">2</button>
+            <button class="numpad-btn" data-value="3">3</button>
+            <button class="numpad-btn" data-value="4">4</button>
+            <button class="numpad-btn" data-value="5">5</button>
+            <button class="numpad-btn" data-value="6">6</button>
+            <button class="numpad-btn" data-value="7">7</button>
+            <button class="numpad-btn" data-value="8">8</button>
+            <button class="numpad-btn" data-value="9">9</button>
+            <button class="numpad-btn" data-value="0">0</button>
+            <button class="numpad-btn" data-value=".">.</button>
+            <button class="numpad-btn" data-value="C">C</button>
+          </div>
+          <button class="process-payment-btn">Pay</button>
+          <button class="close-payment-modal-btn">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Order Completion Modal (initially hidden) -->
+    <div class="order-completion-modal" id="order-completion-modal" style="display: none;">
+      <div class="invoice-summary">
+        <h3 class="customer-name"></h3>
+        <div class="invoice-id"></div>
+        <div class="items-section"></div>
+        <div class="totals-section"></div>
+        <div class="payments-section"></div>
+      </div>
+      <div class="order-actions">
+        <button class="print-receipt-btn">Print Receipt</button>
+        <button class="email-receipt-btn">Email Receipt</button>
+        <button class="new-order-btn">New Order</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- You may include additional static HTML sections if needed -->
+  <script src="/assets/whrt_whitelabel/js/whrt_pos.js"></script>
+</body>
+</html>

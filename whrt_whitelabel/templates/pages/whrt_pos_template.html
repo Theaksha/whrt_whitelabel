@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Whrt POS</title>
+  <!-- Link to your CSS here -->
+  <link rel="stylesheet" href="whrt_pos.css">
+</head>
+<body>
+  <!-- This container will hold your POS layout -->
+  <div id="pos-container">
+    <div class="layout-flex">
+      <!-- Sidebar: Categories -->
+      <div id="sidebar-col" class="sidebar-col">
+        <h3>Categories</h3>
+		
+        <!-- The category list will be built by JavaScript -->
+      </div>
+      <!-- Main Content: Products -->
+      <div id="content-col" class="content-col">
+        <h2>Whrt POS</h2>
+        <p>Select a category to view products</p>
+        <div class="product-grid"></div>
+        <input type="text" placeholder="Search products..." class="search-bar">
+      </div>
+      <!-- Right Column: Customer Search and Cart -->
+      <div id="right-col" class="right-col">
+        <div class="customer-search-container">
+          <input type="text" class="customer-search-input" placeholder="Search or add customer">
+          <button class="add-customer-btn">Add New Customer</button>
+        </div>
+        <div class="cart-section">
+          <h4>Item Cart</h4>
+          <div class="cart-items"></div>
+          <hr>
+          <div class="cart-summary">
+            <div>
+              <span>Total Quantity:</span>
+              <span class="cart-quantity">0</span>
+            </div>
+            <div>
+              <span>Net Total:</span>
+              <span class="net-total">₹0.00</span>
+            </div>
+            <div class="tax-lines"></div>
+            <div class="grand-total">
+              <span>Grand Total:</span>
+              <span>₹<span class="grand-total">TBD</span></span>
+            </div>
+          </div>
+          <div style="text-align:center;">
+            <button class="checkout-btn">Checkout</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div id="paymentModal" style="display:none;">
+      <div class="modal-header">
+        <h5>Payment</h5>
+        <button id="close-payment-modal">X</button>
+      </div>
+      <div class="modal-body">
+        <div class="payment-left">
+          <h4>Payment Method</h4>
+          <div>
+            <label>Cash</label>
+            <input type="number" class="cash-amount" placeholder="0.00">
+          </div>
+          <div>
+            <label>Credit Card</label>
+            <input type="number" class="credit-card-amount" placeholder="0.00">
+          </div>
+          <div>
+            <label>Mobile Payment</label>
+            <input type="number" class="mobile-amount" placeholder="0.00">
+          </div>
+        </div>
+        <div class="payment-right">
+          <div>
+            <div><span>Grand Total:</span><span class="grand-total-display">₹0.00</span></div>
+            <div><span>Paid Amount:</span><span class="paid-amount-display">₹0.00</span></div>
+            <div><span>To Be Paid:</span><span class="to-be-paid-display">₹0.00</span></div>
+          </div>
+          <div id="numpad">
+            <button class="numpad-btn" data-value="1">1</button>
+            <button class="numpad-btn" data-value="2">2</button>
+            <button class="numpad-btn" data-value="3">3</button>
+            <button class="numpad-btn" data-value="4">4</button>
+            <button class="numpad-btn" data-value="5">5</button>
+            <button class="numpad-btn" data-value="6">6</button>
+            <button class="numpad-btn" data-value="7">7</button>
+            <button class="numpad-btn" data-value="8">8</button>
+            <button class="numpad-btn" data-value="9">9</button>
+            <button class="numpad-btn" data-value="0">0</button>
+            <button class="numpad-btn" data-value=".">.</button>
+            <button class="numpad-btn" data-value="C">C</button>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="process-payment-btn">Pay</button>
+      </div>
+    </div>
+
+    <!-- Order Completion Modal -->
+    <div id="orderCompletionModal" style="display:none;">
+      <div class="modal-header">
+        <h5>Order Summary</h5>
+        <button id="close-order-modal">X</button>
+      </div>
+      <div class="modal-body">
+        <h3 class="customer-name"></h3>
+        <div class="invoice-id"></div>
+        <div class="items-section"></div>
+        <div class="totals-section"></div>
+        <div class="payments-section"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="print-receipt-btn">Print Receipt</button>
+        <button class="email-receipt-btn">Email Receipt</button>
+        <button class="new-order-btn">New Order</button>
+      </div>
+    </div>
+  </div>
+  <!-- Do not include the JS file here if Frappe already loads it -->
+</body>
+</html>
