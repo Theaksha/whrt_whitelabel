@@ -175,7 +175,7 @@ after_install = [
     "whrt_whitelabel.install.setup_login_page",    
     #"whrt_whitelabel.install.load_demo_data",
    	"whrt_whitelabel.install.setup_website_logo",
-    #"whrt_whitelabel.utils.get_custom_website_context",
+    "whrt_whitelabel.utils.get_custom_website_context",
         
 ]
 
