@@ -1,4 +1,3 @@
-
 from __future__ import unicode_literals
 from . import __version__ as app_version
 from . import __logo__ as app_logo
@@ -16,6 +15,7 @@ app_description = "Whrt Whitelabel"
 app_email = "akshaymaske517@gmail.com"
 app_license = "mit"
 app_logo_url = '/assets/whrt_whitelabel/images/pk.png'
+app_icon = '/assets/whrt_whitelabel/images/pk.png'
 
 
 
@@ -41,10 +41,11 @@ app_logo_url = '/assets/whrt_whitelabel/images/pk.png'
 
 # include js, css files in header of desk.html
 app_include_css = [
-    "/assets/whrt_whitelabel/css/whrt_whitelabel.css"
-    #"/assets/whrt_whitelabel/css/whrt_pos.css"
+    "/assets/whrt_whitelabel/css/whrt_whitelabel.css",
+    "/assets/whrt_whitelabel/css/whrt_pos.css"
     
 ]
+
 app_include_js = "/assets/whrt_whitelabel/js/whrt_whitelabel.js"
      # Corrected to include both JS files
 
@@ -73,7 +74,7 @@ app_include_js = "/assets/whrt_whitelabel/js/whrt_whitelabel.js"
 # Svg Icons
 # ------------------
 # include app icons in desk
-# app_include_icons = "whrt_whitelabel/public/icons.svg"
+# app_include_icons = "/assets/whrt_whitelabel/images/pk.png"
 
 # Home Pages
 # ----------
@@ -86,11 +87,16 @@ app_include_js = "/assets/whrt_whitelabel/js/whrt_whitelabel.js"
 # role_home_page = {
 # 	"Role": "home_page"
 # }
-website_context = {
-    "favicon": frappe.db.get_single_value('Navbar Settings', 'app_logo') or "/assets/whrt_whitelabel/images/pk.png",
-    "splash_image": frappe.db.get_single_value('Navbar Settings', 'app_logo') or "/assets/whrt_whitelabel/images/pk.png",
-    "app_logo": frappe.db.get_single_value('Navbar Settings', 'app_logo') or "/assets/whrt_whitelabel/images/pk.png"
-}
+#website_context = {
+ #   "favicon": "/assets/whrt_whitelabel/images/pk.png",
+  #  "splash_image": "/assets/whrt_whitelabel/images/pk.png",
+   # "app_logo": "/assets/whrt_whitelabel/images/pk.png"
+#}
+#website_route_rules = [
+    #{"from_route": "/whrt-pos", "to_route": "whrt_pos_template"}
+#]
+
+
 
 
 after_migrate = ['whrt_whitelabel.api.whitelabel_patch'	]
@@ -166,10 +172,10 @@ before_install = [
 after_install = [
 	
 	"whrt_whitelabel.install.install_erpnext",    
-    "whrt_whitelabel.install.setup_login_page",  
-   
+    "whrt_whitelabel.install.setup_login_page",    
+    #"whrt_whitelabel.install.load_demo_data",
    	"whrt_whitelabel.install.setup_website_logo",
-	"whrt_whitelabel.install.load_demo_data",
+    #"whrt_whitelabel.utils.get_custom_website_context",
         
 ]
 
@@ -242,6 +248,8 @@ override_whitelisted_methods = {
 doc_events = {
     "Whitelabel Settings": {
         "on_update": "whrt_whitelabel.utils.apply_whitelabel_settings"
+        
+        
     },
     
 }
