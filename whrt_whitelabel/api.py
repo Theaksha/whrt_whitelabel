@@ -8,6 +8,8 @@ from frappe.utils.background_jobs import enqueue
 from erpnext.setup import setup_wizard
 from frappe.query_builder.functions import Sum, IfNull  # Required for reserved stock calculations
 import logging
+from urllib.parse import urlparse
+import requests
 logger = logging.getLogger(__name__)
 
 
@@ -88,6 +90,25 @@ def custom_on_session_creation(login_manager):
     frappe.local.response["home_page"] = pos_page_url
 
 # --- POS-Frontend APIs ---
+
+
+
+@frappe.whitelist()
+def get_pos_page():
+    """Fetch the WHRT POS page's stored HTML content from the file system"""
+    try:
+        # Ensure the correct file path
+        html_path = frappe.get_app_path("whrt_whitelabel", "public", "whrt_pos_template.html")
+
+        # Read and return the HTML content
+        with open(html_path, "r", encoding="utf-8") as f:
+            html_content = f.read().strip()  # Trim unwanted characters
+            if not html_content:
+                return "<h2>Error: HTML file is empty.</h2>"
+            return html_content
+
+    except Exception as e:
+        return f"<h2>Error Loading POS Page: {str(e)}</h2>"
 
 @frappe.whitelist(allow_guest=True)
 def get_site_url():
@@ -696,3 +717,37 @@ def get_sales_taxes_and_charges_details(template_name):
         })
 
     return tax_rules
+    
+    
+import frappe
+import requests
+import os
+from urllib.parse import urlparse
+
+@frappe.whitelist(allow_guest=True)
+def proxy_image(url):
+    """
+    Fetch an image from a URL and return it directly to the browser.
+    """
+    import mimetypes
+    from werkzeug.wrappers import Response
+
+    allowed_domains = ['bigbasket.com','images.pexels.com']
+    parsed = urlparse(url)
+
+    if not any(domain in parsed.netloc for domain in allowed_domains):
+        frappe.throw("Domain not allowed")
+
+    try:
+        headers = {"User-Agent": "Mozilla/5.0"}
+        response = requests.get(url, stream=True, headers=headers)
+
+        if response.status_code != 200:
+            frappe.throw(f"Image not found. Status Code: {response.status_code}")
+
+        content_type = response.headers.get('Content-Type', mimetypes.guess_type(url)[0])
+        return Response(response.content, content_type=content_type)
+
+    except Exception as e:
+        frappe.logger().error(f"Error proxying image: {str(e)}")
+        frappe.throw(str(e))
