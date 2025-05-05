@@ -52,6 +52,12 @@ def install_erpnext():
         except subprocess.CalledProcessError as e:
             return
 			
+
+
+
+
+
+
 def setup_website_logo():
     favicon = "/assets/whrt_whitelabel/images/pk.png"
     splash_image = "/assets/whrt_whitelabel/images/pk.png"
@@ -84,6 +90,10 @@ def setup_website_logo():
     print("App Logo:", website_settings.get("app_logo"))
     
     print("Website settings updated successfully.")
+
+
+
+
 
 
  
