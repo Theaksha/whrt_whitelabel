@@ -28,3 +28,8 @@ def apply_whitelabel_settings():
         frappe.local.site_config["disable_onboarding"] = True
     if whitelabel_settings.disable_update_popup:
         frappe.local.site_config["disable_update_popup"] = True
+        
+
+
+
+
