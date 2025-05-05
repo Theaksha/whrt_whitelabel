@@ -1,0 +1,123 @@
+{% extends "templates/web.html" %}
+
+{% block page_content %}
+<div id="pos-container">
+    <div class="layout-flex">
+        <!-- Sidebar: Categories -->
+        <div id="sidebar-col" class="sidebar-col">
+            <h3>Categories</h3>
+            <ul>
+                {% for category in categories %}
+                    <li>{{ category.name }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- Main Content: Products -->
+        <div id="content-col" class="content-col">
+            <h2>Whrt POS</h2>
+            <p>Select a category to view products</p>
+            <div class="product-grid">
+                {% for product in products %}
+                    <div class="product-card">
+                        <h4>{{ product.item_name }}</h4>
+                        <p>Price: ₹{{ product.price }}</p>
+                        <button onclick="addToCart('{{ product.item_code }}', '{{ product.price }}')">Add to Cart</button>
+                    </div>
+                {% endfor %}
+            </div>
+            <input type="text" placeholder="Search products..." class="search-bar">
+        </div>
+
+        <!-- Right Column: Customer Search and Cart -->
+        <div id="right-col" class="right-col">
+            <div class="customer-search-container">
+                <input type="text" class="customer-search-input" placeholder="Search or add customer">
+                <button class="add-customer-btn">Add New Customer</button>
+            </div>
+            <div class="cart-section">
+                <h4>Item Cart</h4>
+                <div class="cart-items">
+                    {% for item in cart %}
+                        <div class="cart-item">
+                            <span>{{ item.item_name }} ({{ item.qty }} x ₹{{ item.rate }})</span>
+                        </div>
+                    {% endfor %}
+                </div>
+                <hr>
+                <div class="cart-summary">
+                    <div><span>Total Quantity:</span><span class="cart-quantity">{{ cart_total_qty }}</span></div>
+                    <div><span>Net Total:</span><span class="net-total">₹{{ net_total }}</span></div>
+                    <div class="grand-total">
+                        <span>Grand Total:</span>
+                        <span>₹{{ grand_total }}</span>
+                    </div>
+                </div>
+                <div style="text-align:center;">
+                    <button class="checkout-btn">Checkout</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div id="paymentModal" style="display:none;">
+        <div class="modal-header">
+            <h5>Payment</h5>
+            <button id="close-payment-modal">X</button>
+        </div>
+        <div class="modal-body">
+            <div class="payment-left">
+                <h4>Payment Method</h4>
+                <div>
+                    <label>Cash</label>
+                    <input type="number" class="cash-amount" placeholder="0.00">
+                </div>
+                <div>
+                    <label>Credit Card</label>
+                    <input type="number" class="credit-card-amount" placeholder="0.00">
+                </div>
+                <div>
+                    <label>Mobile Payment</label>
+                    <input type="number" class="mobile-amount" placeholder="0.00">
+                </div>
+            </div>
+            <div class="payment-right">
+                <div>
+                    <div><span>Grand Total:</span><span class="grand-total-display">₹{{ grand_total }}</span></div>
+                    <div><span>Paid Amount:</span><span class="paid-amount-display">₹{{ paid_amount }}</span></div>
+                    <div><span>To Be Paid:</span><span class="to-be-paid-display">₹{{ to_be_paid }}</span></div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="process-payment-btn">Pay</button>
+        </div>
+    </div>
+
+    <!-- Order Completion Modal -->
+    <div id="orderCompletionModal" style="display:none;">
+        <div class="modal-header">
+            <h5>Order Summary</h5>
+            <button id="close-order-modal">X</button>
+        </div>
+        <div class="modal-body">
+            <h3 class="customer-name">{{ customer_name }}</h3>
+            <div class="invoice-id">{{ invoice_id }}</div>
+            <div class="items-section">
+                {% for item in cart %}
+                    <p>{{ item.item_name }} ({{ item.qty }} x ₹{{ item.rate }})</p>
+                {% endfor %}
+            </div>
+            <div class="totals-section">
+                <p>Grand Total: ₹{{ grand_total }}</p>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="print-receipt-btn">Print Receipt</button>
+            <button class="email-receipt-btn">Email Receipt</button>
+            <button class="new-order-btn">New Order</button>
+        </div>
+    </div>
+</div>
+{% endblock %}
