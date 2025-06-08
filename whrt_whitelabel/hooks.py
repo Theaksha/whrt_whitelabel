@@ -6,6 +6,7 @@ from frappe.utils import now
 import subprocess
 import sys
 import os
+from frappe.rate_limiter import rate_limit
 
 
 app_name = "whrt_whitelabel"
@@ -49,6 +50,13 @@ app_include_css = [
 app_include_js = "/assets/whrt_whitelabel/js/whrt_whitelabel.js"
      # Corrected to include both JS files
 
+fixtures = [
+    {"doctype": "Website Theme", "filters": [["name", "=", "My Custom Theme"]]},
+    {"doctype": "Translation", "filters": [["source_text", "like", "%ERPNext%"]]}
+]
+
+
+templates_path = "templates"
 
 
 # include js, css files in header of web template
@@ -56,7 +64,7 @@ app_include_js = "/assets/whrt_whitelabel/js/whrt_whitelabel.js"
 # web_include_js = "/assets/whrt_whitelabel/js/whrt_whitelabel.js"
 
 # include custom scss in every website theme (without file extension ".scss")
-# website_theme_scss = "whrt_whitelabel/public/scss/website"
+website_theme_scss = "whrt_whitelabel/public/scss/website"
 
 # include js, css files in header of web form
 # webform_include_js = {"doctype": "public/js/doctype.js"}
@@ -95,6 +103,10 @@ app_include_js = "/assets/whrt_whitelabel/js/whrt_whitelabel.js"
 #website_route_rules = [
     #{"from_route": "/whrt-pos", "to_route": "whrt_pos_template"}
 #]
+
+@rate_limit(limit=5, seconds=60*60)
+def sign_up(*args, **kwargs):
+    return frappe.utils.password.update_password(new_password)
 
 
 
@@ -175,6 +187,7 @@ after_install = [
     "whrt_whitelabel.install.setup_login_page",    
     #"whrt_whitelabel.install.load_demo_data",
    	"whrt_whitelabel.install.setup_website_logo",
+    "whrt_whitelabel.install.set_default_website_theme"
     #"whrt_whitelabel.utils.get_custom_website_context",
         
 ]
@@ -280,10 +293,10 @@ boot_session = "whrt_whitelabel.api.boot_session"
 # -------
 
 # before_tests = "whrt_whitelabel.install.before_tests"
-fixtures = [
-    {"dt": "Custom Field", "filters": [["Translation", "source_text", "like", "%ERPNext%"]]},
-    "whrt_whitelabel.fixtures.demo_data.csv"  # This points to the fixture files
-]
+# fixtures = [
+#     {"dt": "Custom Field", "filters": [["Translation", "source_text", "like", "%ERPNext%"]]},
+#     "whrt_whitelabel.fixtures.demo_data.csv"  # This points to the fixture files
+# ]
 
 # Overriding Methods
 # ------------------------------
@@ -355,3 +368,12 @@ fixtures = [
 # default_log_clearing_doctypes = {
 # 	"Logging DocType Name": 30  # days to retain logs
 # }
+
+# Use our custom base.html instead of default Frappe one
+#override_base_template = "whrt_whitelabel/templates/base.html"
+# Add this line in hooks.py
+#override_template = {
+#    "templates/includes/navbar/navbar.html": "whrt_whitelabel/templates/includes/navbar.html"
+#}
+
+

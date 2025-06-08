@@ -10,7 +10,42 @@ from frappe.query_builder.functions import Sum, IfNull  # Required for reserved 
 import logging
 from urllib.parse import urlparse
 import requests
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__) 
+
+
+@frappe.whitelist(allow_guest=True)
+def custom_sign_up(email, full_name, password):
+    if frappe.db.exists("User", email):
+        frappe.throw("An account with this email already exists.")
+
+    # 🔐 Prevent creation of Notification Settings for Guest
+    frappe.flags.in_install = True
+
+    user = frappe.get_doc({
+        "doctype": "User",
+        "email": email,
+        "first_name": full_name,
+        "enabled": 0,
+        "new_password": password,
+        "send_welcome_email": 0,
+        "roles": [
+            {"role": "Customer"}
+            
+        ]
+    })
+
+    user.flags.ignore_permissions = True
+    user.insert()
+
+    # ✅ Reset the flag to restore normal behavior
+    frappe.flags.in_install = False
+
+    # 📧 Send verification email
+    from whrt_whitelabel.apis.custom_auth import send_verification_email
+    send_verification_email(email)
+
+    frappe.db.commit()
+    return "Account created. Please check your email to verify."
 
 
 def whitelabel_patch():
@@ -422,6 +457,14 @@ def update_loyalty_points(customer, points):
     customer_doc.save()
     return f"Added {points} loyalty points to {customer_doc.customer_name}."
 
+import frappe
+import json
+from frappe import _
+
+import frappe
+import json
+from frappe import _
+
 @frappe.whitelist(allow_guest=True)
 def calculate_taxes_for_pos_invoice(cart, company, customer, taxes_and_charges=None):
     cart_data = json.loads(cart) if cart else []
@@ -432,23 +475,41 @@ def calculate_taxes_for_pos_invoice(cart, company, customer, taxes_and_charges=N
             "grand_total": 0,
             "taxes": []
         }
+
     fallback_price_list = "Standard Selling"
     fallback_customer_group = "Commercial"
     fallback_currency = "USD"
     original_get_value = frappe.db.get_value
-    if customer == "Walk-in Customer":
-        def fallback_get_value(doctype, name, fieldnames, *args, **kwargs):
-            if doctype == "Customer" and name == "Walk-in Customer" and fieldnames == ["default_price_list", "customer_group", "customer_currency"]:
-                return (fallback_price_list, fallback_customer_group, fallback_currency)
-            return original_get_value(doctype, name, fieldnames, *args, **kwargs)
-        frappe.db.get_value = fallback_get_value
+
+    # Add error handler
     try:
+        # Check if customer is missing
+        if not customer:
+            frappe.local.response['http_status_code'] = 400
+            return {"error": _("Please select a customer before calculating taxes.")}
+
+        # Handle Walk-in Customer fallback
+        if customer == "Walk-in Customer":
+            def fallback_get_value(doctype, name, fieldnames, *args, **kwargs):
+                if (
+                    doctype == "Customer"
+                    and name == "Walk-in Customer"
+                    and fieldnames == ["default_price_list", "customer_group", "customer_currency"]
+                ):
+                    return (fallback_price_list, fallback_customer_group, fallback_currency)
+                return original_get_value(doctype, name, fieldnames, *args, **kwargs)
+
+            frappe.db.get_value = fallback_get_value
+
+        # Create POS Invoice doc
         pos_invoice_doc = frappe.get_doc({
             "doctype": "POS Invoice",
             "company": company,
             "customer": customer,
             "taxes_and_charges": taxes_and_charges
         })
+
+        # Add items from cart
         for item in cart_data:
             pos_invoice_doc.append("items", {
                 "item_code": item.get("name"),
@@ -457,8 +518,11 @@ def calculate_taxes_for_pos_invoice(cart, company, customer, taxes_and_charges=N
                 "rate": item.get("valuation_rate", 0),
                 "uom": "Nos"
             })
+
+        # Calculate taxes
         pos_invoice_doc.run_method("set_missing_values")
         pos_invoice_doc.run_method("calculate_taxes_and_totals")
+
         result = {
             "net_total": pos_invoice_doc.net_total,
             "total_taxes_and_charges": pos_invoice_doc.total_taxes_and_charges,
@@ -471,10 +535,18 @@ def calculate_taxes_for_pos_invoice(cart, company, customer, taxes_and_charges=N
                 for tax in pos_invoice_doc.get("taxes", [])
             ]
         }
-    finally:
-        frappe.db.get_value = original_get_value
-    return result
+        return result
 
+    except Exception as e:
+        # Log full traceback to the server
+        frappe.log_error(frappe.get_traceback(), "POS Tax Calculation Error")
+        # Return a clean error message to the client
+        frappe.local.response['http_status_code'] = 500
+        return {"error": _("An unexpected error occurred while calculating taxes. Please contact support.")}
+
+    finally:
+        # Always restore original get_value
+        frappe.db.get_value = original_get_value
 @frappe.whitelist(allow_guest=True)
 def create_pos_opening_entry(company, pos_profile, period_start_date, period_end_date, opening_balance_details):
     try:

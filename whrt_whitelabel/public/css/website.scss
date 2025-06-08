@@ -1,0 +1,26 @@
+$primary: #28a745;
+$secondary: #218838;
+$body-bg: #f8f9fa;
+$body-color: #212529;
+
+/* Import default ERPNext Website styles */
+@import "frappe/public/scss/website";
+
+body {
+  font-family: 'Poppins', sans-serif;
+}
+
+.hero {
+  background: url('/assets/modern_green_theme/images/hero-bg.jpg') center center / cover no-repeat;
+  padding: 100px 20px;
+  text-align: center;
+  color: white;
+}
+
+.hero h1 {
+  font-size: 3rem;
+}
+
+.hero p {
+  font-size: 1.25rem;
+}

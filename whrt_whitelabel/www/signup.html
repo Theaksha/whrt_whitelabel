@@ -1,0 +1,93 @@
+{% extends "templates/web.html" %}
+
+{% block head_include %}
+<style>
+/* Signup Page Styles */
+.signup-card {
+    max-width: 400px;
+    margin: 50px auto;
+    padding: 30px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    border-radius: 8px;
+    background: #fff;
+}
+.signup-card h4 {
+    text-align: center;
+    margin-bottom: 25px;
+    font-weight: 600;
+}
+.signup-card .form-group {
+    margin-bottom: 15px;
+}
+.signup-card .form-control {
+    height: 45px;
+    border-radius: 4px;
+}
+.signup-card .btn {
+    height: 45px;
+    font-weight: 500;
+}
+#signup-message {
+    text-align: center;
+}
+</style>
+{% endblock %}
+
+{% block page_content %}
+<div class="page-card signup-card">
+    <div class="page-card-head">
+        <h4>{{ _("Create an Account") }}</h4>
+    </div>
+    <form id="signup-form" class="form-signup">
+        <div class="form-group">
+            <input type="text" id="full_name" class="form-control" placeholder="Full Name" required>
+        </div>
+        <div class="form-group">
+            <input type="email" id="email" class="form-control" placeholder="Email Address" required>
+        </div>
+        <div class="form-group">
+            <input type="password" id="password" class="form-control" placeholder="Password" required>
+           <small class="form-text text-muted">
+    Password must be 8+ characters and include upper, lower, and symbols.
+</small>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Sign Up</button>
+    </form>
+    <div id="signup-message" class="mt-3"></div>
+
+    <div class="text-center mt-3">
+        <a href="/login" class="btn btn-link">Back to Login</a>
+    </div>
+</div>
+
+<script>
+frappe.ready(function () {
+    $('#signup-form').on('submit', function (e) {
+        e.preventDefault();
+
+        const fullName = $('#full_name').val();
+        const email = $('#email').val();
+        const password = $('#password').val();
+
+        frappe.call({
+            method: 'whrt_whitelabel.api.custom_sign_up',
+            args: {
+                email: email,
+                full_name: fullName,
+                password: password
+            },
+            callback: function (r) {
+                if (r.message) {
+                    localStorage.setItem("signup_success", "Account created successfully. Please check your email to confirm your account, then log in.");
+                    window.location.href = "/login";
+                }
+            },
+            error: function (r) {
+                const errorMsg = r?.message?.message || "Sign up failed. Please try again.";
+                $('#signup-message').html(`<div class="alert alert-danger">${errorMsg}</div>`);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

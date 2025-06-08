@@ -200,7 +200,10 @@ export class Controller {
 		// Listen for the event to add a product to the cart
 		$(document).on('whrt-pos:add_to_cart', async function (e, product) {
 			console.debug("Event 'whrt-pos:add_to_cart' received with product:", product);
-			// Ensure a customer is selected; fallback to "Walk-in Customer"
+			if (!window.selected_customer) {
+		frappe.msgprint(__('Please select a customer before adding items to the cart.'));
+		return;
+	}
 			await addToCart(product, window.selected_customer || "Walk-in Customer");
 		});
 

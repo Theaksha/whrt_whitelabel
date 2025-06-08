@@ -1,0 +1,48 @@
+{% extends "templates/web.html" %}
+
+{% block page_content %}
+<div class="page-card signup-card">
+    <h4 class="text-center">Complete Verification</h4>
+    <form id="verify-form">
+        <div class="form-group">
+            <input type="password" id="new_password" class="form-control" placeholder="New Password" required>
+        </div>
+        <div class="form-group">
+            <input type="password" id="confirm_password" class="form-control" placeholder="Confirm Password" required>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Set Password</button>
+        <div id="verify-message" class="mt-3 text-center"></div>
+    </form>
+</div>
+
+<script>
+frappe.ready(function () {
+    const token = frappe.utils.get_url_arg("token");
+
+    $('#verify-form').on('submit', function (e) {
+        e.preventDefault();
+
+        const pass1 = $('#new_password').val();
+        const pass2 = $('#confirm_password').val();
+        const $msg = $('#verify-message');
+
+        if (pass1 !== pass2) {
+            $msg.html(`<div class="alert alert-danger">Passwords do not match.</div>`);
+            return;
+        }
+
+        frappe.call({
+            method: 'whrt_whitelabel.apis.custom_auth.verify_and_set_password',
+            args: { token: token, password: pass1 },
+            callback: function (r) {
+                $msg.html(`<div class="alert alert-success">${r.message}</div>`);
+                setTimeout(() => window.location.href = r.message.redirect || "/app", 1500);
+            },
+            error: function (r) {
+                $msg.html(`<div class="alert alert-danger">${r.message || "Verification failed."}</div>`);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

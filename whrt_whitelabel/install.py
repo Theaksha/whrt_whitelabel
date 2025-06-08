@@ -199,7 +199,19 @@ def load_demo_data():
         frappe.log_error(message=f"Error loading demo data: {e}", title="Demo Data Loading Error")
 
 
+def set_default_website_theme():
+    theme_name = "My Custom Theme"
+    
+    # Check if the theme exists
+    if frappe.db.exists("Website Theme", theme_name):
+        settings = frappe.get_single("Website Settings")
+        settings.website_theme = theme_name
+        settings.save()
+        frappe.db.commit()
+
+        
+
 if __name__ == "__main__":
     install_erpnext()
     setup_login_page()
-    load_demo_data()
+    #load_demo_data()

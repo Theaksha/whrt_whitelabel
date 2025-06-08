@@ -1,0 +1,162 @@
+// Enable/disable Bootstrap features
+$enable-shadows: false;
+$enable-gradients: false;
+$enable-rounded: true;
+
+// Import base Frappe + Bootstrap website styles
+@import "frappe/public/scss/website.bundle";
+
+// Google Fonts
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+// Custom CSS variables
+:root {
+  --primary-color: #667eea;
+  --primary-hover: #5a67d8;
+  --background-light: #f4f6f8;
+  --background-dark: #1e1e2f;
+  --text-light: #2f3542;
+  --text-dark: #f1f1f1;
+  --card-bg-light: #ffffff;
+  --card-bg-dark: #2a2a40;
+}
+
+// Base styles
+body {
+  font-family: 'Inter', sans-serif;
+  background-color: var(--background-light);
+  color: var(--text-light);
+  margin: 0;
+  padding: 0;
+  transition: background 0.3s, color 0.3s;
+}
+
+// Navbar styling
+.navbar {
+  background: linear-gradient(to right, var(--primary-color), #764ba2);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.navbar .nav-link,
+.navbar-brand {
+  color: white !important;
+  font-weight: 600;
+  transition: color 0.3s ease;
+}
+
+.navbar .nav-link:hover {
+  color: #ffeaa7 !important;
+}
+
+// Hero Banner
+.hero-banner {
+  position: relative;
+  height: 400px;
+  overflow: hidden;
+
+  img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    filter: brightness(70%);
+  }
+
+  .hero-text {
+    z-index: 2;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.6);
+  }
+}
+
+// Section titles
+.section-title {
+  font-size: 2rem;
+  font-weight: 700;
+  border-bottom: 2px solid var(--primary-color);
+  display: inline-block;
+  padding-bottom: 0.3rem;
+  margin-bottom: 1rem;
+  color: var(--primary-color);
+}
+
+// Category & Product Cards
+.category-card,
+.product-card {
+  text-align: center;
+  text-decoration: none;
+  display: block;
+  color: var(--text-light);
+  transition: transform 0.2s ease-in-out;
+
+  img {
+    max-height: 200px;
+    object-fit: cover;
+    border-radius: 0.5rem;
+    border: 1px solid #ddd;
+    margin-bottom: 0.5rem;
+  }
+
+  p,
+  h6 {
+    margin: 0;
+    font-weight: 600;
+  }
+
+  &:hover {
+    transform: scale(1.03);
+  }
+}
+
+// Feature Icons Section
+.info-icons {
+  background-color: #f8f9fa;
+
+  h5 {
+    color: var(--primary-color);
+    font-weight: 700;
+  }
+
+  p {
+    margin-bottom: 0;
+    font-size: 0.95rem;
+  }
+}
+
+// Button styles
+.btn-primary {
+  background-color: var(--primary-color);
+  border-color: var(--primary-color);
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+}
+
+.btn-primary:hover {
+  background-color: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+// Dark mode support
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: var(--background-dark);
+    color: var(--text-dark);
+  }
+
+  .navbar {
+    background: linear-gradient(to right, #3b3b98, #5f27cd);
+  }
+
+  .navbar .nav-link,
+  .navbar-brand {
+    color: var(--text-dark) !important;
+  }
+
+  .category-card,
+  .product-card {
+    color: var(--text-dark);
+  }
+
+  .info-icons {
+    background-color: var(--card-bg-dark);
+    color: var(--text-dark);
+  }
+}

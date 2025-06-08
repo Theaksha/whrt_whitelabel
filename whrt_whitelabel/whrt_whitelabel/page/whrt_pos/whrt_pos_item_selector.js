@@ -129,6 +129,10 @@ function createProductItem(product, stock_mapping) {
   
   // When clicked, trigger the event to add the product to the cart
   product_item.on('click', function () {
+  if (!window.selected_customer) {
+    frappe.msgprint("You must select a customer before adding an item.");
+    return; // Prevent adding the item to the cart if no customer is selected
+  }
     $(document).trigger('whrt-pos:add_to_cart', [product]);
   });
   return product_item;
