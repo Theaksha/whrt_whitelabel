@@ -1,0 +1,106 @@
+{% extends "whrt_whitelabel/templates/basic.html" %}
+
+{% block title %}StyleCart - Home{% endblock %}
+
+{% block content %}
+<!-- Hero Slider -->
+<section class="main-slider">
+  <div class="tp-banner-container">
+    <div class="tp-banner">
+      <ul>
+        <li data-transition="fade" data-masterspeed="1000">
+          <img src="/assets/whrt_whitelabel/webshop/images/main-slider/image-1.jpg" alt="" />
+          <div class="tp-caption sfl sfb tp-resizeme" data-x="center" data-y="center" data-voffset="-100" data-speed="1000" data-start="0">
+            <h2>Modern Living<br> Starts Here</h2>
+          </div>
+          <div class="tp-caption sfl sfb tp-resizeme" data-x="center" data-y="center" data-voffset="10" data-speed="1000" data-start="500">
+            <div class="text text-center">Best furniture and decor deals for your home<br>with fast delivery and premium quality.</div>
+          </div>
+          <div class="tp-caption sfb tp-resizeme" data-x="center" data-y="center" data-voffset="100" data-speed="1000" data-start="1000">
+            <a href="/shop" class="theme-btn btn-style-one">Shop Now</a>
+          </div>
+        </li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- Top Categories -->
+<section class="best-service-section">
+  <div class="auto-container">
+    <div class="sec-title clearfix">
+      <h2 class="pull-left">Shop by Category</h2>
+    </div>
+    <div class="row clearfix">
+      {% for group in item_groups %}
+      <div class="col-md-4 service-block-two">
+        <div class="inner-box">
+          <div class="icon-box"><span class="flaticon-dinner"></span></div>
+          <h3><a href="/shop?group={{ group.name | urlencode }}">{{ group.name }}</a></h3>
+          <div class="text">Explore our {{ group.name }} collection.</div>
+        </div>
+      </div>
+      {% else %}
+      <div class="col-md-12">
+        <p>No categories found.</p>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- Featured Products -->
+<section class="tabbed-shop-section">
+  <div class="auto-container">
+    <div class="sec-title-four">
+      <h2>Featured Products</h2>
+    </div>
+    <div class="shop-tabs-box">
+      <div class="tabs-content">
+        <div class="shop-tab active-tab">
+          <div class="tabbed-shop-carousel">
+            {% for item in items %}
+            <div class="default-shop-item">
+              <div class="inner-box">
+                <figure class="image-box">
+                  <a href="/producte/product?name={{ item.name | urlencode }}" class="product-item md-height bg-gray d-block">
+                    <img src="{{ item.image or '/assets/whrt_whitelabel/webshop/images/default-product.jpg' }}"
+                         alt="{{ item.item_name }}" class="fixed-product-image" />
+                  </a>
+                </figure>
+                <div class="lower-content">
+                  <h3 class="product-title-truncate">
+                    <a href="/producte/product?name={{ item.name | urlencode }}">{{ item.item_name }}</a>
+                  </h3>
+                  <div class="price">₹{{ item.price }}</div>
+                  <div class="links-box">
+                    <a href="javascript:void(0)" class="cart-btn add-to-cart-btn" data-item="{{ item.name }}"data-name="{{ item.item_name }}" data-image="{{ item.image }}"
+  data-price="{{ item.price }}">Add to Cart</a>
+                    <a class="zoom-btn lightbox-image" href="{{ item.image or '/assets/whrt_whitelabel/webshop/images/default-product.jpg' }}" title="Quick View">
+                      <span class="fa fa-search-plus"></span>
+                    </a>
+                    <a class="add-to-favorite" href="#" title="Add to Favourite"><span class="fa fa-heart"></span></a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Call To Action -->
+<section class="call-to-action" style="background-image:url('/assets/whrt_whitelabel/webshop/images/background/image-1.jpg');">
+  <div class="auto-container">
+    <div class="row">
+      <div class="text">Join the StyleCart Experience</div>
+      <h2>Get Best Deals on Your Favorite Furniture</h2>
+      <a class="theme-btn btn-style-one" href="/shop">Browse Products</a>
+      <a class="theme-btn btn-style-two" href="/contact">Get in Touch</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

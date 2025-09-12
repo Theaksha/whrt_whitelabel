@@ -48,12 +48,14 @@ app_include_css = [
 ]
 
 app_include_js = "/assets/whrt_whitelabel/js/whrt_whitelabel.js"
+app_include_js = "/assets/whrt_whitelabel/js/inventory_theme.js"
      # Corrected to include both JS files
 
 fixtures = [
     {"doctype": "Website Theme", "filters": [["name", "=", "My Custom Theme"]]},
     {"doctype": "Translation", "filters": [["source_text", "like", "%ERPNext%"]]}
 ]
+
 
 
 templates_path = "templates"
@@ -100,9 +102,9 @@ website_theme_scss = "whrt_whitelabel/public/scss/website"
   #  "splash_image": "/assets/whrt_whitelabel/images/pk.png",
    # "app_logo": "/assets/whrt_whitelabel/images/pk.png"
 #}
-#website_route_rules = [
-    #{"from_route": "/whrt-pos", "to_route": "whrt_pos_template"}
-#]
+website_route_rules = [
+    {"from_route": "/product/<path:name>", "to_route": "product"}
+]
 
 @rate_limit(limit=5, seconds=60*60)
 def sign_up(*args, **kwargs):

@@ -1,0 +1,22 @@
+<!-- my_app/www/me.html -->
+{% extends "templates/web.html" %}
+
+{% block title %}
+  My Custom Account Page
+{% endblock %}
+
+{% block page_content %}
+  <div class="custom-account-page">
+    <h1>Welcome, {{ current_user.full_name }}</h1>
+    <p>Email: {{ current_user.email }}</p>
+
+    <div>
+      <a class="btn btn-primary" href="/update-profile/{{ user }}">Edit Profile</a>
+      <a class="btn btn-secondary" href="/update-password">Change Password</a>
+    </div>
+    
+    <div style="margin-top: 20px;">
+      <a href="/">Go to Home</a>
+    </div>
+  </div>
+{% endblock %}

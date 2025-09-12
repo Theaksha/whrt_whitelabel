@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="utf-8">
+  <title>{% block title %}Decorators - Design Studio{% endblock %}</title>
+
+  <!-- Stylesheets -->
+  <link href="/assets/whrt_whitelabel/webshop/css/bootstrap.css" rel="stylesheet">
+  <link href="/assets/whrt_whitelabel/webshop/css/revolution-slider.css" rel="stylesheet">
+  <link rel="stylesheet" href="/assets/whrt_whitelabel/webshop/css/jquery.bootstrap-touchspin.css">
+  <link href="/assets/whrt_whitelabel/webshop/css/style.css" rel="stylesheet">
+  <link href="/assets/whrt_whitelabel/webshop/css/responsive.css" rel="stylesheet">
+  <link rel="shortcut icon" href="/assets/whrt_whitelabel/webshop/images/favicon.ico" type="image/x-icon">
+  <link rel="icon" href="/assets/whrt_whitelabel/webshop/images/favicon.ico" type="image/x-icon">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+
+  <!--[if lt IE 9]>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv.js"></script>
+  <script src="/assets/whrt_whitelabel/webshop/js/respond.js"></script>
+  <![endif]-->
+
+  {% block head_extra %}{% endblock %}
+</head>
+
+<body>
+  <div class="page-wrapper">
+    <!-- Preloader -->
+    <div class="preloader"></div>
+
+    {% include "whrt_whitelabel/templates/includes/navbar.html" %}
+
+    {% block content %}{% endblock %}
+
+    {% include "whrt_whitelabel/templates/includes/footer.html" %}
+  </div>
+
+  <!-- Scripts -->
+  <script src="/assets/whrt_whitelabel/webshop/js/jquery.js"></script> 
+<script src="/assets/whrt_whitelabel/webshop/js/bootstrap.min.js"></script>
+
+<!-- ✅ TouchSpin plugin (MUST be after jQuery and before script.js) -->
+<script src="/assets/whrt_whitelabel/webshop/js/jquery.bootstrap-touchspin.js"></script>
+
+<script src="/assets/whrt_whitelabel/webshop/js/jquery.mCustomScrollbar.concat.min.js"></script>
+<script src="/assets/whrt_whitelabel/webshop/js/revolution.min.js"></script>
+<script src="/assets/whrt_whitelabel/webshop/js/jquery.fancybox.pack.js"></script>
+<script src="/assets/whrt_whitelabel/webshop/js/jquery.fancybox-media.js"></script>
+<script src="/assets/whrt_whitelabel/webshop/js/isotope.js"></script>
+<script src="/assets/whrt_whitelabel/webshop/js/owl.js"></script>
+<script src="/assets/whrt_whitelabel/webshop/js/wow.js"></script>
+<script src="/assets/whrt_whitelabel/webshop/js/cart.js"></script>
+
+
+<!-- Your main script (should come last) -->
+<script src="/assets/whrt_whitelabel/webshop/js/script.js"></script>
+  {% block script %}{% endblock %}
+  {% block script_extra %}{% endblock %}
+</body>
+
+</html>

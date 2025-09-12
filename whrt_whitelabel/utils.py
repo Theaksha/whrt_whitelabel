@@ -1,4 +1,6 @@
 import frappe
+import re
+from unidecode import unidecode
 
 def apply_whitelabel_settings():
     # Assuming there's only one settings record
@@ -28,6 +30,16 @@ def apply_whitelabel_settings():
         frappe.local.site_config["disable_onboarding"] = True
     if whitelabel_settings.disable_update_popup:
         frappe.local.site_config["disable_update_popup"] = True
+
+
+
+
+def slugify(text):
+    """Generate SEO-friendly slug from text"""
+    text = unidecode.unidecode(text).lower()
+    text = re.sub(r"[^\w\s-]", "", text)
+    text = re.sub(r"[\s_-]+", "-", text)
+    return text.strip("-")
         
 
 

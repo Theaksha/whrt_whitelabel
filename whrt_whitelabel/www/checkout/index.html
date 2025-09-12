@@ -1,0 +1,588 @@
+{% extends "whrt_whitelabel/templates/basic.html" %}
+
+{% block title %}Checkout - StyleCart{% endblock %}
+
+{% block content %}
+<!--Page Title-->
+<section class="page-title" style="background-image:url(/assets/whrt_whitelabel/webshop/images/background/bg-page-title-1.jpg);">
+  <div class="auto-container">
+    <h1>Checkout</h1>
+  </div>
+</section>
+
+<!--Page Info-->
+<section class="page-info">
+  <div class="auto-container clearfix">
+    <div class="pull-left"><h2>Checkout</h2></div>
+    <div class="pull-right">
+      <ul class="bread-crumb clearfix">
+        <li><a href="/">Home</a></li>
+        <li><a href="/shop">Shop</a></li>
+        <li>Checkout</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!--Checkout Section-->
+<section class="checkout-section cart-section">
+  <div class="auto-container">
+    <div class="row clearfix">
+      <!-- Billing -->
+      <div class="col-md-6 column form-column">
+        <div class="sec-title medium"><h2>Billing Address</h2></div>
+        <div class="styled-form billing-info-form">
+          <form id="checkout-form">
+            <div class="row clearfix">
+              <div class="form-group col-md-12">
+                <div class="field-label">Country*</div>
+                <select name="country" id="country" required>
+                  <option value="">Select Country</option>
+                  <option value="India" selected>India</option>
+                  <option value="USA">United States</option>
+                  <option value="UK">United Kingdom</option>
+                </select>
+              </div>
+              <div class="form-group col-md-6">
+                <div class="field-label">First Name*</div>
+                <input type="text" name="fname" id="fname" required>
+              </div>
+              <div class="form-group col-md-6">
+                <div class="field-label">Last Name*</div>
+                <input type="text" name="lname" id="lname" required>
+              </div>
+              <div class="form-group col-md-12">
+                <div class="field-label">Address 1*</div>
+                <input type="text" name="address1" id="address1" required>
+              </div>
+              <div class="form-group col-md-12">
+                <div class="field-label">Address 2</div>
+                <input type="text" name="address2" id="address2">
+              </div>
+              <div class="form-group col-md-12">
+                <div class="field-label">City*</div>
+                <input type="text" name="city" id="city" required>
+              </div>
+              <div class="form-group col-md-12">
+                <div class="field-label">State*</div>
+                <select name="state" id="state" required>
+                  <option value="">Select State</option>
+                  <option value="Delhi">Delhi</option>
+                  <option value="Maharashtra">Maharashtra</option>
+                  <option value="Karnataka">Karnataka</option>
+                </select>
+              </div>
+              <div class="form-group col-md-12">
+                <div class="field-label">Postal Code*</div>
+                <input type="text" name="postcode" id="postcode" required>
+              </div>
+              <div class="form-group col-md-12">
+                <div class="field-label">Email*</div>
+                <input type="email" name="email" id="email" required>
+              </div>
+              <div class="form-group col-md-12">
+                <div class="field-label">Phone*</div>
+                <input type="tel" name="phone" id="phone" required>
+              </div>
+              <div class="form-group col-md-12">
+                <div class="check-box"><input type="checkbox" id="create-account"> <label for="create-account">Create an account?</label></div>
+              </div>
+              <div class="form-group col-md-12">
+                <div class="check-box"><input type="checkbox" id="same-shipping"> <label for="same-shipping">Ship to same address</label></div>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      
+<!-- Shipping -->
+<div class="col-md-6 column form-column" id="shipping-section">
+  <div class="sec-title medium"><h2>Shipping Address</h2></div>
+  <div class="styled-form billing-info-form">
+    <div class="row clearfix">
+      <div class="form-group col-md-6">
+        <div class="field-label">First Name*</div>
+        <input type="text" id="shipping_fname">
+      </div>
+      <div class="form-group col-md-6">
+        <div class="field-label">Last Name*</div>
+        <input type="text" id="shipping_lname">
+      </div>
+      <div class="form-group col-md-12">
+        <div class="field-label">Address 1*</div>
+        <input type="text" id="shipping_address1">
+      </div>
+      <div class="form-group col-md-12">
+        <div class="field-label">Address 2</div>
+        <input type="text" id="shipping_address2">
+      </div>
+      <div class="form-group col-md-12">
+        <div class="field-label">City*</div>
+        <input type="text" id="shipping_city">
+      </div>
+      <div class="form-group col-md-12">
+        <div class="field-label">State*</div>
+        <select id="shipping_state">
+          <option value="">Select State</option>
+          <option value="Delhi">Delhi</option>
+          <option value="Maharashtra">Maharashtra</option>
+          <option value="Karnataka">Karnataka</option>
+        </select>
+      </div>
+      <div class="form-group col-md-12">
+        <div class="field-label">Postal Code*</div>
+        <input type="text" id="shipping_postcode">
+      </div>
+      <div class="form-group col-md-12">
+        <div class="field-label">Country*</div>
+        <select id="shipping_country">
+          <option value="">Select Country</option>
+          <option value="India" selected>India</option>
+          <option value="USA">United States</option>
+          <option value="UK">United Kingdom</option>
+        </select>
+      </div>
+      <div class="form-group col-md-12">
+        <div class="field-label">Email*</div>
+        <input type="email" id="shipping_email">
+      </div>
+      <div class="form-group col-md-12">
+        <div class="field-label">Phone*</div>
+        <input type="tel" id="shipping_phone">
+      </div>
+      <div class="form-group col-md-12">
+        <div class="field-label">Order Notes</div>
+        <textarea id="notes" placeholder="Special instructions for delivery"></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Cart + Totals -->
+    <div class="row clearfix">
+      <div class="col-lg-6 column default-column">
+        <div class="table-outer">
+          <table class="cart-table">
+            <thead class="cart-header">
+              <tr>
+                <th class="prod-column">Product</th>
+                <th>Qty</th>
+                <th class="sub-total text-center">Price</th>
+              </tr>
+            </thead>
+            <tbody id="checkout-cart-items">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="col-lg-6 column default-column">
+        <div class="order-summary">
+          <h3>Cart Totals</h3>
+          <ul class="totals-table">
+            <li class="clearfix"><span class="col col-title">Cart Subtotal</span><span class="col">₹<span id="checkout-subtotal">0.00</span></span></li>
+            <li class="clearfix"><span class="col col-title">Shipping</span>
+              <span class="col">
+                <select id="shipping-method" class="shipping-select">
+                  <option value="0">Free Shipping (5-7 days)</option>
+                  <option value="100">Standard (3-5 days) - ₹100</option>
+                  <option value="250">Express (1-2 days) - ₹250</option>
+                </select>
+              </span>
+            </li>
+            <li class="clearfix"><span class="col col-title">Tax (GST)</span><span class="col">₹<span id="checkout-tax">0.00</span></span></li>
+            <li class="clearfix total-row"><span class="col col-title">Order Total</span><span class="col">₹<span id="checkout-total">0.00</span></span></li>
+          </ul>
+
+          <div class="payment-options">
+            <h4>Payment Method</h4>
+            <div class="option-block">
+              <input type="radio" name="payment-group" id="radio-one" value="bank" checked>
+              <label for="radio-one">Direct Bank Transfer</label>
+              <div class="payment-desc">Make your payment directly into our bank account.</div>
+            </div>
+            <div class="option-block">
+              <input type="radio" name="payment-group" id="radio-two" value="upi">
+              <label for="radio-two">UPI Payment</label>
+              <div class="payment-desc">Pay using any UPI app like Google Pay, PhonePe, etc.</div>
+            </div>
+            <div class="option-block">
+              <input type="radio" name="payment-group" id="radio-three" value="card">
+              <label for="radio-three">Credit/Debit Card</label>
+              <div class="payment-desc">Secure payment via Razorpay.</div>
+            </div>
+            <div class="option-block">
+              <input type="radio" name="payment-group" id="radio-four" value="cod">
+              <label for="radio-four">Cash on Delivery</label>
+              <div class="payment-desc">Pay when you receive the order.</div>
+            </div>
+          </div>
+
+          <div class="terms-checkbox">
+            <input type="checkbox" id="terms" required>
+            <label for="terms">I agree to the <a href="/terms" target="_blank">terms and conditions</a></label>
+          </div>
+
+          <div class="padd-top-40 text-right">
+            <button type="button" class="theme-btn place-order-btn" onclick="placeOrder()">Place Order</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+/* Checkout Page Specific Styles */
+.checkout-section {
+  padding: 60px 0;
+}
+
+.form-column {
+  margin-bottom: 30px;
+}
+
+.styled-form input[type="text"],
+.styled-form input[type="email"],
+.styled-form input[type="tel"],
+.styled-form select,
+.styled-form textarea {
+  width: 100%;
+  padding: 12px 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  font-size: 14px;
+}
+
+.styled-form textarea {
+  height: 120px;
+  resize: vertical;
+}
+
+.styled-form select {
+  height: 48px;
+  background-color: #fff;
+}
+
+.field-label {
+  margin-bottom: 8px;
+  font-weight: 500;
+  color: #555;
+}
+
+.check-box {
+  margin: 15px 0;
+}
+
+.check-box input {
+  margin-right: 10px;
+}
+
+.cart-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.cart-table th {
+  padding: 15px 10px;
+  text-align: left;
+  border-bottom: 2px solid #eee;
+  font-weight: 600;
+}
+
+.cart-table td {
+  padding: 15px 10px;
+  border-bottom: 1px solid #eee;
+  vertical-align: middle;
+}
+
+.prod-column .column-box {
+  display: flex;
+  align-items: center;
+}
+
+.prod-thumb {
+  width: 60px;
+  margin-right: 15px;
+}
+
+.prod-thumb img {
+  max-width: 100%;
+  height: auto;
+}
+
+.order-summary {
+  background: #f9f9f9;
+  padding: 25px;
+  border-radius: 5px;
+}
+
+.totals-table {
+  width: 100%;
+  margin: 20px 0;
+}
+
+.totals-table li {
+  padding: 12px 0;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+}
+
+.totals-table .total-row {
+  font-weight: 600;
+  font-size: 18px;
+  color: #fc721e;
+}
+
+.shipping-select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.payment-options {
+  margin: 25px 0;
+}
+
+.payment-options h4 {
+  margin-bottom: 15px;
+  font-size: 18px;
+}
+
+.option-block {
+  margin-bottom: 15px;
+  padding: 15px;
+  border: 1px solid #eee;
+  border-radius: 4px;
+}
+
+.option-block input {
+  margin-right: 10px;
+}
+
+.payment-desc {
+  font-size: 13px;
+  color: #666;
+  margin-top: 5px;
+  padding-left: 25px;
+}
+
+.terms-checkbox {
+  margin: 20px 0;
+}
+
+.place-order-btn {
+  width: 100%;
+  padding: 15px;
+  background: #fc721e;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.place-order-btn:hover {
+  background: #e05a0a;
+}
+
+/* Responsive */
+@media (max-width: 991px) {
+  .form-column {
+    margin-bottom: 30px;
+  }
+  
+  .checkout-section {
+    padding: 30px 0;
+  }
+}
+</style>
+{% endblock %}
+
+{% block script %}
+<script>
+const GST_RATE = 0.05;
+
+document.addEventListener("DOMContentLoaded", function() {
+  renderCheckoutCart();
+  setupEventListeners();
+});
+
+function setupEventListeners() {
+  document.getElementById("same-shipping").addEventListener("change", function() {
+    document.getElementById("shipping-section").style.display = this.checked ? "none" : "block";
+  });
+  document.getElementById("same-shipping").checked = true;
+  document.getElementById("shipping-section").style.display = "none";
+  document.getElementById("shipping-method").addEventListener("change", updateTotals);
+}
+
+function renderCheckoutCart() {
+  const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+  const container = document.getElementById("checkout-cart-items");
+  container.innerHTML = '';
+  if (cart.length === 0) {
+    container.innerHTML = '<tr><td colspan="3" class="text-center">Your cart is empty</td></tr>';
+    return;
+  }
+  cart.forEach(item => {
+    const itemTotal = item.qty * item.price;
+    const row = `
+      <tr>
+        <td class="prod-column">
+          <div class="column-box">
+            <figure class="prod-thumb"><img src="${item.image || '/assets/whrt_whitelabel/webshop/images/default-product.jpg'}" width="60"></figure>
+            <h3 class="prod-title">${item.item_name}</h3>
+          </div>
+        </td>
+        <td class="qty">${item.qty}</td>
+        <td class="sub-total text-center">₹${itemTotal.toFixed(2)}</td>
+      </tr>
+    `;
+    container.insertAdjacentHTML('beforeend', row);
+  });
+  updateTotals();
+}
+
+function updateTotals() {
+  const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+  const subtotal = cart.reduce((sum, item) => sum + item.qty * item.price, 0);
+  const shipping = parseFloat(document.getElementById("shipping-method").value) || 0;
+  const tax = subtotal * GST_RATE;
+  const total = subtotal + shipping + tax;
+
+  document.getElementById("checkout-subtotal").textContent = subtotal.toFixed(2);
+  document.getElementById("checkout-tax").textContent = tax.toFixed(2);
+  document.getElementById("checkout-total").textContent = total.toFixed(2);
+}
+
+function placeOrder() {
+  const user = "{{ frappe.session.user }}";
+  if (user === "Guest") {
+    alert("Please login first to place your order.");
+    window.location.href = "/login?redirect-to=/checkout";
+    return;
+  }
+
+  const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+  if (cart.length === 0) {
+    alert("Your cart is empty!");
+    return;
+  }
+
+  if (!document.getElementById("terms").checked) {
+    alert("Please agree to the terms and conditions");
+    return;
+  }
+
+  const requiredFields = ['country', 'fname', 'lname', 'address1', 'city', 'state', 'postcode', 'email', 'phone'];
+  for (const fieldId of requiredFields) {
+    const field = document.getElementById(fieldId);
+    if (!field.value.trim()) {
+      alert(`Please fill in ${field.previousElementSibling.textContent}`);
+      field.focus();
+      return;
+    }
+  }
+
+  const billing = {
+    country: document.getElementById("country").value,
+    fname: document.getElementById("fname").value,
+    lname: document.getElementById("lname").value,
+    address1: document.getElementById("address1").value,
+    address2: document.getElementById("address2").value,
+    city: document.getElementById("city").value,
+    state: document.getElementById("state").value,
+    postcode: document.getElementById("postcode").value,
+    email: document.getElementById("email").value,
+    phone: document.getElementById("phone").value,
+    create_account: document.getElementById("create-account").checked
+  };
+
+  
+  const sameAddress = document.getElementById("same-shipping").checked;
+  const shipping = sameAddress ? null : {
+    country: document.getElementById("shipping_country").value,
+    fname: document.getElementById("shipping_fname").value,
+    lname: document.getElementById("shipping_lname").value,
+    address1: document.getElementById("shipping_address1").value,
+    address2: document.getElementById("shipping_address2").value,
+    city: document.getElementById("shipping_city").value,
+    state: document.getElementById("shipping_state").value,
+    postcode: document.getElementById("shipping_postcode").value,
+    email: document.getElementById("shipping_email").value,
+    phone: document.getElementById("shipping_phone").value,
+    notes: document.getElementById("notes").value || ""
+  };
+
+
+  const shippingCost = parseFloat(document.getElementById("shipping-method").value) || 0;
+  const taxAmount = parseFloat(document.getElementById("checkout-tax").textContent) || 0;
+  const subtotal = parseFloat(document.getElementById("checkout-subtotal").textContent) || 0;
+  const total = parseFloat(document.getElementById("checkout-total").textContent) || 0;
+
+  
+  
+  console.log("Billing object:", billing);
+  console.log("Shipping object:", shipping);
+  console.log("Same address:", sameAddress);
+
+  const orderData = {
+    billing: billing,
+    shipping: shipping,
+    same_address: sameAddress,
+    cart: cart,
+    tax: taxAmount,
+    shipping_cost: shippingCost,
+    subtotal: subtotal,
+    total: total,
+    payment: document.querySelector('input[name="payment-group"]:checked').value,
+    shipping_method: document.getElementById("shipping-method").options[document.getElementById("shipping-method").selectedIndex].text
+  };
+
+
+  const btn = document.querySelector('.place-order-btn');
+  btn.disabled = true;
+  btn.textContent = 'Processing...';
+
+  fetch("/api/method/whrt_whitelabel.apis.checkout.place_order", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Frappe-CSRF-Token": "{{ csrf_token | escape }}"
+    },
+    credentials: "include",
+    body: JSON.stringify(orderData)
+  })
+  .then(res => {
+    if (!res.ok) {
+      throw new Error("Server error. Please try again.");
+    }
+    return res.json();
+  })
+  .then(data => {
+    if (data.message && data.message.status === "success") {
+      localStorage.removeItem("cart");
+      window.location.href = `/payment-request?name=${data.message.payment_request}`;
+    } else {
+      throw new Error(data.message?.message || "Failed to place order");
+    }
+  })
+  .catch(err => {
+    console.error(err);
+    alert(err.message || "Something went wrong. Please try again.");
+  })
+  .finally(() => {
+    btn.disabled = false;
+    btn.textContent = 'Place Order';
+  });
+}
+</script>
+{% endblock %}

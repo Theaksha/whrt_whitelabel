@@ -1,0 +1,193 @@
+{% extends "whrt_whitelabel/templates/basic.html" %}
+{% block title %}Your Cart - StyleCart{% endblock %}
+
+{% block content %}
+
+<!--Page Title-->
+<section class="page-title" style="background-image:url(/assets/whrt_whitelabel/webshop/images/background/bg-page-title-1.jpg);">
+  <div class="auto-container">
+    <h1>Shopping Cart</h1>
+  </div>
+</section>
+
+<!--Page Info-->
+<section class="page-info">
+  <div class="auto-container clearfix">
+    <div class="pull-left"><h2>Shopping Cart</h2></div>
+    <div class="pull-right">
+      <ul class="bread-crumb clearfix">
+        <li><a href="/">Home</a></li>
+        <li><a href="/shop">Shop</a></li>
+        <li>Shopping Cart</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!--Cart Section-->
+<section class="cart-section">
+  <div class="auto-container">
+    <div class="cart-outer">
+      <div class="table-outer">
+        <table class="cart-table">
+          <thead class="cart-header">
+            <tr>
+              <th class="prod-column">PRODUCT</th>
+              <th>&nbsp;</th>
+              <th>Quantity</th>
+              <th>Avalability</th>
+              <th class="price">Price</th>
+              <th>Total</th>
+              <th>Remove</th>
+            </tr>
+          </thead>
+          <tbody id="cart-body">
+            <!-- JS will populate rows here -->
+          </tbody>
+        </table>
+      </div>
+
+      <div class="coupon-outer clearfix">
+        <div class="pull-left">
+          <div class="apply-coupon clearfix">
+            <div class="form-group clearfix">
+              <input type="text" name="coupon-code" value="" placeholder="Enter Coupon Code...">
+            </div>
+            <div class="form-group clearfix">
+              <button type="button" class="theme-btn btn-style-two">Apply Coupon</button>
+            </div>
+          </div>
+        </div>
+        <div class="pull-right">
+          <a href="/cart" class="theme-btn btn-style-one">Update Cart</a>
+          <a href="/checkout" class="theme-btn btn-style-two">Proceed to Checkout</a>
+        </div>
+      </div>
+
+      <!--Cart Note-->
+      <div class="cart-note"><span class="theme_color">Note:</span> Add items worth ₹10,000 and get a gift voucher worth ₹2,000 for your next purchase!</div>
+
+      <div class="row clearfix">
+        <div class="column col-md-6 col-sm-12 col-xs-12">
+          <div class="estimate-form styled-form">
+            <h3>Calculate Shipping</h3>
+            <form method="post" action="#">
+              <div class="row clearfix">
+                <div class="form-group col-md-12 col-sm-6 col-xs-12">
+                  <select name="country">
+                    <option>India</option>
+                    <option>USA</option>
+                    <option>UK</option>
+                    <option>Canada</option>
+                  </select>
+                </div>
+                <div class="form-group col-md-6 col-sm-6 col-xs-12">
+                  <select name="state">
+                    <option>Maharashtra</option>
+                    <option>Delhi</option>
+                    <option>Gujarat</option>
+                  </select>
+                </div>
+                <div class="form-group col-md-6 col-sm-6 col-xs-12">
+                  <input type="text" name="zip" placeholder="Zip / Postal Code">
+                </div>
+                <div class="form-group col-md-12 col-sm-12 col-xs-12">
+                  <button type="submit" class="theme-btn btn-style-two">Update Totals</button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <div class="column col-md-6 col-sm-12 col-xs-12">
+          <h3>Cart Totals</h3>
+          <ul class="totals-table">
+            <li class="clearfix"><span class="col col-title">Cart Subtotal</span><span class="col">₹<span id="subtotal">0.00</span></span></li>
+            <li class="clearfix"><span class="col col-title">Shipping</span><span class="col">Free Shipping</span></li>
+            <li class="clearfix"><span class="col col-title">Order Total</span><span class="col">₹<span id="grand-total">0.00</span></span></li>
+          </ul>
+          <div class="padd-top-30 text-right">
+            <a href="/checkout" class="theme-btn btn-style-two">Proceed to Checkout</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block script %}
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  const cart = JSON.parse(localStorage.getItem("cart") || "[]");
+  const tbody = document.getElementById("cart-body");
+  const subtotalEl = document.getElementById("subtotal");
+  const grandTotalEl = document.getElementById("grand-total");
+
+  if (cart.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7">Your cart is empty.</td></tr>`;
+    return;
+  }
+
+  let subtotal = 0;
+
+  cart.forEach((item, i) => {
+    const qty = item.qty || 1;
+    const price = item.price || 0;
+    const total = qty * price;
+    subtotal += total;
+
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td colspan="2" class="prod-column">
+        <div class="column-box">
+          <figure class="prod-thumb"><img src="${item.image || '/assets/whrt_whitelabel/webshop/images/default-product.jpg'}" alt=""></figure>
+          <h3 class="prod-title">${item.item_name || item.name}</h3>
+        </div>
+      </td>
+      <td class="qty">
+        <input class="quantity-spinner" type="number" min="1" value="${qty}" data-index="${i}">
+      </td>
+      <td class="unit-price">
+        <div class="available-info"><span class="icon fa fa-check"></span> Item(s)<br>Available Now</div>
+      </td>
+      <td class="price">₹${price.toFixed(2)}</td>
+      <td class="sub-total">₹${total.toFixed(2)}</td>
+      <td class="remove"><a href="#" class="remove-btn" data-index="${i}"><span class="fa fa-trash-o"></span> Remove</a></td>
+    `;
+    tbody.appendChild(row);
+  });
+
+  subtotalEl.textContent = subtotal.toFixed(2);
+  grandTotalEl.textContent = subtotal.toFixed(2);
+
+  // Handle qty update
+  document.querySelectorAll(".quantity-spinner").forEach(input => {
+    input.addEventListener("change", function () {
+      const index = this.dataset.index;
+      const newQty = parseInt(this.value) || 1;
+      cart[index].qty = newQty;
+      localStorage.setItem("cart", JSON.stringify(cart));
+      location.reload();
+    });
+  });
+
+  // Handle remove
+  document.querySelectorAll(".remove-btn").forEach(btn => {
+    btn.addEventListener("click", function (e) {
+      e.preventDefault();
+      const index = this.dataset.index;
+      cart.splice(index, 1);
+      localStorage.setItem("cart", JSON.stringify(cart));
+      location.reload();
+    });
+  });
+
+  // Update header cart count
+  const countEl = document.getElementById("cart-count");
+  if (countEl) countEl.textContent = cart.length;
+});
+</script>
+{% endblock %}

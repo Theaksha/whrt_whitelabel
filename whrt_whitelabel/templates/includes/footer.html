@@ -1,5 +1,16 @@
-<footer class="footer mt-5 py-4 text-center" style="background-color: var(--card-bg-light); color: var(--text-light);">
-    <div class="container">
-    <p class="mb-0">&copy; {{ frappe.utils.nowdate().split('-')[0] }} My Store. All rights reserved.</p>
+<!-- Main Footer -->
+<footer class="main-footer">
+  <div class="auto-container">
+    <div class="footer-bottom clearfix">
+      <div class="pull-left">
+        <div class="copyright">© {{ frappe.utils.nowdate()[:4] }} White Rays Technology. All rights reserved.</div>
+      </div>
+      <div class="pull-right">
+        <ul class="footer-links">
+          <li><a href="/terms">Terms of Service</a></li>
+          <li><a href="/privacy">Privacy Policy</a></li>
+        </ul>
+      </div>
     </div>
-    </footer>
+  </div>
+</footer>

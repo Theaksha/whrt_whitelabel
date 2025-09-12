@@ -1,0 +1,146 @@
+{% extends "whrt_whitelabel/templates/basic.html" %}
+
+{% block title %}{{ item.item_name }} - StyleCart{% endblock %}
+
+{% block content %}
+<!--Page Title-->
+<section class="page-title" style="background-image:url(/assets/whrt_whitelabel/webshop/images/background/bg-page-title-1.jpg);">
+  <div class="auto-container">
+    <h1>{{ item.item_name }}</h1>
+  </div>
+</section>
+
+<!--Page Info-->
+<section class="page-info">
+  <div class="auto-container clearfix">
+    <div class="pull-left"><h2>{{ item.item_name }}</h2></div>
+    <div class="pull-right">
+      <ul class="bread-crumb clearfix">
+        <li><a href="/">Home</a></li>
+        <li><a href="/shop">Shop</a></li>
+        <li>{{ item.item_name }}</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!--Sidebar Page-->
+<div class="sidebar-page-container">
+  <div class="auto-container">
+    <div class="row clearfix">
+      
+      <!--Content Side-->      
+      <div class="content-side col-lg-9 col-md-8 col-sm-12 col-xs-12">
+        <section class="products-section product-details no-padd-top no-padd-bottom">
+          <div class="basic-details">
+            <div class="row clearfix">
+              <div class="image-column col-md-5 col-sm-6 col-xs-12">
+                <figure class="image-box">
+                  <img class="img-responsive" src="{{ item.image or '/assets/whrt_whitelabel/webshop/images/default-product.jpg' }}" alt="{{ item.item_name }}">
+                </figure>
+              </div>
+              <div class="info-column col-md-7 col-sm-6 col-xs-12">
+                <div class="details-header">
+                  <h4>{{ item.item_name }}</h4>
+                  <div class="rating">
+                    {% for i in range(5) %}<span class="fa fa-star"></span>{% endfor %}
+                    <span class="txt">({{ item.review_count or 0 }} Reviews)</span>
+                  </div>
+                  <div class="item-price">₹ {{ item.price or 0 }}</div>
+                </div>
+
+                <div class="text">
+                  <p>{{ item.description or "No description available." }}</p>
+                </div>
+
+                <div class="check-delivery">
+                  <h4>Check Delivery Option at Your Location:</h4>
+                  <form method="post" action="#">
+                    <div class="clearfix">
+                      <div class="form-group">
+                        <input type="text" name="chk-delivery" placeholder="Pincode" required>
+                      </div>
+                      <div class="form-group">
+                        <button type="button">Check</button>
+                      </div>
+                      <div class="form-group">
+                        <div class="field-label">Expected Delivery in 8 Days</div>
+                      </div>
+                    </div>
+                  </form>
+                </div>
+
+                <div class="clearfix options">
+                  <div class="pull-left padd-right-20 item-quantity">
+                    <input class="quantity-spinner" type="text" value="1" name="quantity">
+                  </div>
+                  <div class="pull-left padd-right-20">
+                    <a href="javascript:void(0);" 
+   class="theme-btn btn-style-one add-to-cart-btn"
+   data-item="{{ item.name }}"
+   data-name="{{ item.item_name }}"
+   data-price="{{ item.price }}"
+   data-image="{{ item.image or '' }}">
+   Add to Cart
+</a>
+
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!--Product Info Tabs-->
+          <div class="product-info-tabs">
+            <div class="prod-tabs" id="product-tabs">
+              <div class="tab-btns clearfix">
+                <a href="#prod-description" class="tab-btn active-btn">Description</a>
+              </div>
+              <div class="tabs-container">
+                <div class="tab active-tab" id="prod-description">
+                  <h3>Description</h3>
+                  <div class="content">
+                    <p>{{ item.description or "No description available." }}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Related Products -->
+        <section class="related-products">
+          <div class="sec-title medium"><h2>Related Products</h2></div>
+          <div class="related-items-carousel">
+            {% for related in related_items %}
+            <div class="default-shop-item">
+              <div class="inner-box">
+                <figure class="image-box">
+                  <a href="/product?name={{ related.name }}"><img src="{{ related.image or '/assets/whrt_whitelabel/webshop/images/default-product.jpg' }}" alt="{{ related.item_name }}" class="fixed-product-image" /></a>
+                </figure>
+                <div class="lower-content">
+                  <h3><a href="/product?name={{ related.name }}">{{ related.item_name[:25] ~ ("..." if related.item_name|length > 25 else "") }}</a></h3>
+                  <div class="price">₹{{ related.price or 0 }}</div>
+                  <div class="links-box">
+                    <a class="cart-btn" href="/carts?add={{ related.name }}">Add to Cart</a>
+		    <a class="zoom-btn lightbox-image" href="{{ item.image or '#' }}"><span class="fa fa-search-plus" title="Quick View"></span></a>
+
+                    <a class="add-to-favorite" href="#"><span class="fa fa-heart"></span></a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+        </section>
+      </div>
+
+      <!--Sidebar-->
+      <div class="sidebar-side col-lg-3 col-md-4 col-sm-6 col-xs-12">
+        {% include "whrt_whitelabel/templates/includes/sidebar.html" %}
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

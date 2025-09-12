@@ -1,3 +1,4 @@
+
 import { getPOSLayout, injectPOSStyles } from './pos_ui.js';
 import { ItemSelector } from './pos_item_selector.js';
 import { ItemCart } from './pos_item_cart.js';
@@ -154,6 +155,14 @@ export class PointOfSale {
                 this.taxTemplate = r.message.tax_template || "";
                 this.warehouse = r.message.warehouse;
                 this.itemGroups = r.message.item_groups || [];
+		// Save item groups separately to the dedicated object store
+	// Save item groups separately to the dedicated object store
+const txGroups = this.db.transaction(STORES.ITEM_GROUPS, 'readwrite');
+const groupStore = txGroups.objectStore(STORES.ITEM_GROUPS);
+await groupStore.clear(); // Optional: clear old entries
+this.itemGroups.forEach(group => groupStore.put(group));
+
+
                 this.currency = r.message.currency || "₹";
 
                 // Save profile data to IndexedDB
@@ -206,10 +215,18 @@ export class PointOfSale {
         try {
             await this._loadItems();
             await this._loadCustomers();
+
+	// Fallback if itemGroups is still empty
+if (!this.itemGroups || this.itemGroups.length === 0) {
+    console.warn('Loading item groups from item_groups store as fallback');
+    this.itemGroups = await this._getAllFromDB(STORES.ITEM_GROUPS);
+}
+
             
             // If online, sync any pending orders
             if (this.isOnline) {
                 await this._syncPendingOrders();
+		await this._cacheAllItemsToIndexedDB();
             }
         } catch (error) {
             console.error("Initial data load error:", error);
@@ -220,6 +237,40 @@ export class PointOfSale {
         }
     }
 
+async _cacheAllItemsToIndexedDB() {
+    try {
+        if (!this.isOnline) {
+            console.warn("Offline mode: skipping full item cache");
+            return;
+        }
+
+        const r = await frappe.call({
+            method: "whrt_whitelabel.apis.pos.get_items",
+            args: {
+                start: 0,
+                page_length: 10000,  // Fetch a large number
+                pos_profile: this.posProfile,
+                item_group: "",
+                search_term: ""
+            }
+        });
+
+        const items = Array.isArray(r.message?.items) ? r.message.items : r.message;
+
+        const tx = this.db.transaction(STORES.ITEMS, 'readwrite');
+        const store = tx.objectStore(STORES.ITEMS);
+        await store.clear();  // clear previous entries
+
+        items.forEach(item => store.put(item));
+
+        console.log(`✅ Cached ${items.length} items to IndexedDB`);
+    } catch (error) {
+        console.error("Failed to cache all items:", error);
+        this._showError("Could not cache all items for offline mode");
+    }
+}
+
+
     async _renderPage() {
         $(this.wrapper).html(getPOSLayout(this.posProfile, this.currency));
         injectPOSStyles();
@@ -227,10 +278,42 @@ export class PointOfSale {
         $('.logout-btn').on('click', () => this._logout());
 
         this.itemSelector = new ItemSelector(this);
+
+	$('#btn-view-customer-summary').on('click', () => {
+    const customerId = this.selected_customer?.id || $('.customer-search').val()?.trim();
+    if (!customerId) {
+        frappe.msgprint("Please select a customer first.");
+        return;
+    }
+    this._showCustomerSummary(customerId);
+});
+
+
+	// Make sure item groups are rendered to dropdown
+if (this.itemGroups && this.itemGroups.length > 0) {
+    this.itemSelector.renderGroups(this.itemGroups);
+} else {
+    console.warn("Item groups not available when rendering dropdown");
+}
+
+
         this.cartView = new ItemCart(this);
         this.numpad = new NumberPad(this);
         this.payment = new PaymentPanel(this);
         this.customerSelector = new CustomerSelector(this);
+
+
+       $('.page-next').on('click', () => {
+    this.pageStart += this.pageLength;
+    this._loadItems($('.item-search').val().trim());
+});
+
+$('.page-prev').on('click', () => {
+    this.pageStart = Math.max(0, this.pageStart - this.pageLength);
+    this._loadItems($('.item-search').val().trim());
+});
+
+
 
         $('.item-search').on('input', e => {
             clearTimeout(this.searchTimeout);
@@ -299,6 +382,11 @@ export class PointOfSale {
             }
 
             this.itemSelector.renderItems(this.items, this.cart);
+
+           // Show page number
+const currentPage = Math.floor(this.pageStart / this.pageLength) + 1;
+$('.page-info').text(`Page ${currentPage}`);
+
             
         } catch (error) {
             console.error("Items load error:", error);
@@ -332,6 +420,77 @@ export class PointOfSale {
             this._showError(__('Failed to load customers'));
         }
     }
+
+
+   async _showCustomerSummary(customerId) {
+    if (!customerId || !this.isOnline) {
+        console.warn("No customer ID or offline");
+        return;
+    }
+
+    console.log("Fetching summary for customer:", customerId); // ✅ DEBUG
+
+    try {
+        const r = await frappe.call({
+            method: "whrt_whitelabel.apis.pos.get_customer_summary",
+            args: { customer_id: customerId }
+        });
+
+        const data = r.message;
+
+        if (data.error) {
+            return this._showError(data.error);
+        }
+
+        const rows = data.recent_invoices.map(inv => `
+            <tr>
+                <td>${inv.name}</td>
+                <td>${inv.posting_date}</td>
+                <td>${this.currency} ${inv.grand_total.toFixed(2)}</td>
+                <td>${this.currency} ${inv.outstanding_amount.toFixed(2)}</td>
+            </tr>
+        `).join('');
+
+        const $modal = $(`
+            <div class="modal fade" id="customerSummaryModal" tabindex="-1">
+              <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                  <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title">Customer Summary: ${data.customer_name}</h5>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                  </div>
+                  <div class="modal-body">
+                    <p><strong>Total Orders:</strong> ${data.total_orders}</p>
+                    <p><strong>Outstanding Balance:</strong> ${this.currency} ${data.outstanding_balance.toFixed(2)}</p>
+                    <p><strong>Last Invoice:</strong> ${data.last_invoice?.name || "N/A"} on ${data.last_invoice?.posting_date || "N/A"}</p>
+                    <hr/>
+                    <h6>Recent Invoices</h6>
+                    <table class="table table-bordered">
+                      <thead>
+                        <tr><th>Invoice</th><th>Date</th><th>Total</th><th>Outstanding</th></tr>
+                      </thead>
+                      <tbody>${rows}</tbody>
+                    </table>
+                  </div>
+                  <div class="modal-footer">
+                    <button class="btn btn-secondary" data-dismiss="modal">Close</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+        `);
+
+
+        $('body').append($modal);
+        $modal.modal('show');
+        $modal.on('hidden.bs.modal', () => $modal.remove());
+    } catch (err) {
+        console.error("Customer summary error:", err);
+        this._showError("Failed to load customer summary");
+    }
+}
+ 
+
 
     addToCart(item) {
         const key = item.item_code;
@@ -616,16 +775,21 @@ _showOrderSummaryModal(invoiceId) {
     }
 
     const { items, totals } = this.lastCompletedOrder;
-    
-    const rows = Object.values(items).map(item => `
-        <tr>
-            <td>${item.item_name}</td>
-            <td>${item.qty}</td>
-            <td>${this.currency} ${item.rate.toFixed(2)}</td>
-<td>${this.currency} ${(item.qty * item.rate).toFixed(2)}</td>
 
-        </tr>
-    `).join('');
+    const rows = Object.values(items).map(item => {
+        const qty = item.qty ?? 0;
+        const rate = item.rate ?? item.valuation_rate ?? 0;
+        const amount = qty * rate;
+
+        return `
+            <tr>
+                <td>${item.item_name || item.name || 'Unnamed Item'}</td>
+                <td>${qty}</td>
+                <td>${this.currency} ${rate.toFixed(2)}</td>
+                <td>${this.currency} ${amount.toFixed(2)}</td>
+            </tr>
+        `;
+    }).join('');
 
     const $modal = $(`
         <div class="modal fade" tabindex="-1" role="dialog" id="orderSummaryModal">
@@ -652,8 +816,7 @@ _showOrderSummaryModal(invoiceId) {
                   </tbody>
                 </table>
                 <div class="text-right font-weight-bold">
-                    Total: ${this.currency} ${totals.grandTotal.toFixed(2)}
-
+                    Total: ${this.currency} ${(totals?.grandTotal ?? 0).toFixed(2)}
                 </div>
               </div>
               <div class="modal-footer">
@@ -673,86 +836,105 @@ _showOrderSummaryModal(invoiceId) {
 }
 
     async _printReceipt(invoiceId) {
-        try {
-            if (this.isOnline) {
-                const r = await frappe.call({
-                    method: "whrt_whitelabel.apis.pos.print_receipt",
-                    args: { invoice_id: invoiceId }
-                });
+    try {
+        if (this.isOnline) {
+            const r = await frappe.call({
+                method: "whrt_whitelabel.apis.pos.print_receipt",
+                args: { invoice_id: invoiceId }
+            });
 
-                if (r.message) {
-                    const printWindow = window.open('', '_blank');
-                    printWindow.document.write(r.message);
-                    printWindow.document.close();
-                    printWindow.print();
-                }
-            } else {
-                // Offline receipt printing
+            if (r.message) {
                 const printWindow = window.open('', '_blank');
-                printWindow.document.write(`
-                    <html>
-                        <head>
-                            <title>Receipt #${invoiceId}</title>
-                            <style>
-                                body { font-family: Arial, sans-serif; margin: 20px; }
-                                .receipt-header { text-align: center; margin-bottom: 20px; }
-                                .receipt-title { font-size: 18px; font-weight: bold; }
-                                .receipt-info { margin-bottom: 15px; }
-                                .receipt-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
-                                .receipt-table th, .receipt-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                                .receipt-table th { background-color: #f2f2f2; }
-                                .receipt-total { text-align: right; font-weight: bold; }
-                                .receipt-footer { margin-top: 20px; text-align: center; font-size: 12px; }
-                            </style>
-                        </head>
-                        <body>
-                            <div class="receipt-header">
-                                <div class="receipt-title">OFFLINE RECEIPT</div>
-                                <div>#${invoiceId}</div>
-                                <div>${new Date().toLocaleString()}</div>
-                            </div>
-                            <div class="receipt-info">
-                                <div><strong>Customer:</strong> ${this.selected_customer?.name || 'Walk-in Customer'}</div>
-                                <div><strong>POS Profile:</strong> ${this.posProfile}</div>
-                            </div>
-                            <table class="receipt-table">
-                                <thead>
-                                    <tr>
-                                        <th>Item</th>
-                                        <th>Qty</th>
-                                        <th>Rate</th>
-                                        <th>Amount</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    ${Object.values(this.cart).map(item => `
-                                        <tr>
-                                            <td>${item.item_name}</td>
-                                            <td>${item.qty}</td>
-                                            <td>${this.currency} ${item.rate.toFixed(2)}</td>
-                                            <td>${this.currency} ${(item.qty * item.rate).toFixed(2)}</td>
-                                        </tr>
-                                    `).join('')}
-                                </tbody>
-                            </table>
-                            <div class="receipt-total">
-                                <div>Total: ${this.currency} ${this.cartView.getTotals().grandTotal.toFixed(2)}</div>
-                            </div>
-                            <div class="receipt-footer">
-                                <div>This is an offline receipt. The order will be synced when connection is restored.</div>
-                                <div>Thank you for your purchase!</div>
-                            </div>
-                        </body>
-                    </html>
-                `);
+                printWindow.document.write(r.message);
                 printWindow.document.close();
                 printWindow.print();
             }
-        } catch (error) {
-            console.error("Print failed:", error);
-            this._showError(__('Failed to print receipt'));
+        } else {
+            // Offline receipt printing
+            const printWindow = window.open('', '_blank');
+            const order = this.lastCompletedOrder;
+if (!order) {
+    this._showError("No order data available for printing");
+    return;
+}
+
+const rows = Object.values(order.items).map(item => {
+    const qty = item.qty ?? 0;
+    const rate = item.rate ?? item.valuation_rate ?? 0;
+    const amount = qty * rate;
+
+    return `
+        <tr>
+            <td>${item.item_name || item.name || 'Unnamed Item'}</td>
+            <td>${qty}</td>
+            <td>${this.currency} ${rate.toFixed(2)}</td>
+            <td>${this.currency} ${amount.toFixed(2)}</td>
+        </tr>
+    `;
+}).join('');
+
+
+            printWindow.document.write(`
+                <html>
+                    <head>
+                        <title>Receipt #${invoiceId}</title>
+                        <style>
+                            body { font-family: Arial, sans-serif; margin: 20px; }
+                            .receipt-header { text-align: center; margin-bottom: 20px; }
+                            .receipt-title { font-size: 18px; font-weight: bold; }
+                            .receipt-info { margin-bottom: 15px; }
+                            .receipt-table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+                            .receipt-table th, .receipt-table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                            .receipt-table th { background-color: #f2f2f2; }
+                            .receipt-total { text-align: right; font-weight: bold; }
+                            .receipt-footer { margin-top: 20px; text-align: center; font-size: 12px; }
+                        </style>
+                    </head>
+                    <body>
+                        <div class="receipt-header">
+                            <div class="receipt-title">OFFLINE RECEIPT</div>
+                            <div>#${invoiceId}</div>
+                            <div>${new Date().toLocaleString()}</div>
+                        </div>
+                        <div class="receipt-info">
+                            <div><strong>Customer:</strong> ${this.selected_customer?.name || 'Walk-in Customer'}</div>
+                            <div><strong>POS Profile:</strong> ${this.posProfile}</div>
+                        </div>
+                        <table class="receipt-table">
+                            <thead>
+                                <tr>
+                                    <th>Item</th>
+                                    <th>Qty</th>
+                                    <th>Rate</th>
+                                    <th>Amount</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${rows}
+                            </tbody>
+                        </table>
+                        <div class="receipt-total">
+                            <div>Total: ${this.currency} ${(order.totals?.grandTotal ?? 0).toFixed(2)}</div>
+
+                        </div>
+                        <div class="receipt-footer">
+			    <div><strong>Date:</strong> ${new Date(order.timestamp || Date.now()).toLocaleString()}</div>
+
+                            <div>This is an offline receipt. The order will be synced when connection is restored.</div>
+                            <div>Thank you for your purchase!</div>
+                        </div>
+                    </body>
+                </html>
+            `);
+
+            printWindow.document.close();
+            printWindow.print();
         }
+    } catch (error) {
+        console.error("Print failed:", error);
+        this._showError(__('Failed to print receipt'));
     }
+}
 
     _logout() {
         if (Object.keys(this.cart).length > 0) {

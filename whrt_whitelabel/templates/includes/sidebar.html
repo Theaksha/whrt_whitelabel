@@ -1,0 +1,35 @@
+<div class="widget search-box sidebar-widget">
+            <form method="GET" action="/shop">
+              <div class="form-group">
+                <input type="search" name="search" placeholder="Search product..." value="{{ search or '' }}">
+                <button type="submit"><span class="icon fa fa-search"></span></button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Categories -->
+          <div class="widget popular-categories sidebar-widget">
+            <div class="sidebar-title"><h3>Product Categories</h3></div>
+            <ul class="list-three">
+              {% for group in item_groups %}
+              <li><a href="/shop?group={{ group.name | urlencode }}">{{ group.name }}</a></li>
+              {% endfor %}
+            </ul>
+          </div>
+
+          <!-- Latest Products -->
+          <div class="widget best-sellers sidebar-widget">
+            <div class="sidebar-title"><h3>Latest Products</h3></div>
+            {% for latest in latest_items %}
+            <div class="item">
+              <div class="post-thumb">
+                <a href="/producte/product?name={{ latest.name | urlencode }}">
+                  <img src="{{ latest.image or '/assets/whrt_whitelabel/webshop/images/default-product.jpg' }}" alt="">
+                </a>
+              </div>
+              <h4><a href="/producte/product?name={{ latest.name | urlencode }}">{{ latest.item_name }}</a></h4>
+              <div class="item-price">₹{{ latest.price or 0 }}</div>
+            </div>
+            {% endfor %}
+          </div>
+

@@ -4,6 +4,8 @@ export function getPOSLayout(posProfile, currency) {
       <div class="pos-header-bar">
         <h2>Point of Sale <span class="profile">${posProfile}</span></h2>
         <div class="header-actions">
+
+	 
           <button class="logout-btn">
             <i class="fa fa-sign-out"></i> Logout
           </button>
@@ -32,7 +34,13 @@ export function getPOSLayout(posProfile, currency) {
           </div>
         </div>
         <div class="pos-right">
-          <input type="text" class="customer-search" placeholder="Search customer…">
+          <div class="customer-section">
+  <input type="text" class="customer-search" placeholder="Search customer…">
+  <button id="btn-view-customer-summary" class="btn btn-outline-info btn-sm" style="margin-top: 6px;">
+    <i class="fa fa-user"></i> View Summary
+  </button>
+</div>
+
           <div class="cart-header">Item Cart</div>
           <div class="cart-body">No items in cart</div>
           <div class="discount-box">

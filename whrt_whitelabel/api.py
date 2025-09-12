@@ -13,6 +13,19 @@ import requests
 logger = logging.getLogger(__name__) 
 
 
+
+
+@frappe.whitelist(allow_guest=True)
+def create_order():
+    import json
+    data = frappe.local.form_dict
+    payload = json.loads(frappe.request.data)
+
+    # Create custom Order DocType or Sales Order here
+    frappe.msgprint(f"Received order from {payload.get('full_name')}")
+    return "ok"
+
+
 @frappe.whitelist(allow_guest=True)
 def custom_sign_up(email, full_name, password):
     if frappe.db.exists("User", email):

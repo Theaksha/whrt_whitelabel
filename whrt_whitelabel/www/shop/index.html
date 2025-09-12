@@ -1,0 +1,496 @@
+{% extends "whrt_whitelabel/templates/basic.html" %}
+
+{% block title %}Shop Products - StyleCart{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+.highlight {
+    background-color: #fff8e1;
+    font-weight: bold;
+    padding: 0 2px;
+    border-radius: 2px;
+}
+
+.search-suggestions {
+    position: absolute;
+    background: white;
+    border: 1px solid #ddd;
+    width: calc(100% - 40px);
+    z-index: 1000;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    display: none;
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+.search-suggestion {
+    padding: 10px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+    display: flex;
+    align-items: center;
+}
+
+.search-suggestion:hover {
+    background-color: #f5f5f5;
+}
+
+.search-suggestion:last-child {
+    border-bottom: none;
+}
+
+.search-suggestion img {
+    width: 30px;
+    height: 30px;
+    object-fit: cover;
+    margin-right: 10px;
+}
+
+.ajax-loading {
+    display: none;
+    text-align: center;
+    padding: 20px;
+}
+
+.pagination {
+    margin-top: 30px;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.pagination a {
+    margin: 5px;
+    padding: 8px 15px;
+    border: 1px solid #ddd;
+    text-decoration: none;
+    color: #333;
+    border-radius: 3px;
+}
+
+.pagination a.active {
+    background-color: #333;
+    color: white;
+    border-color: #333;
+}
+
+.pagination a:hover:not(.active) {
+    background-color: #f5f5f5;
+}
+
+.search-filters {
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 4px;
+    border: 1px solid #eee;
+}
+
+.search-results-info {
+    background-color: #f8f9fa;
+    padding: 10px 15px;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    border-left: 4px solid #007bff;
+}
+
+.no-results {
+    text-align: center;
+    padding: 40px 20px;
+}
+
+.no-results .icon {
+    font-size: 48px;
+    color: #ddd;
+    margin-bottom: 15px;
+}
+
+.search-form-container {
+    position: relative;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Page Title -->
+<section class="page-title" style="background-image:url(/assets/whrt_whitelabel/webshop/images/background/bg-page-title-1.jpg);">
+  <div class="auto-container">
+    <h1>Shop Products</h1>
+  </div>
+</section>
+
+<!-- Page Info -->
+<section class="page-info">
+  <div class="auto-container clearfix">
+    <div class="pull-left"><h2>Shop Products</h2></div>
+    <div class="pull-right">
+      <ul class="bread-crumb clearfix">
+        <li><a href="/">Home</a></li>
+        <li>Shop</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- Shop Page -->
+<div class="sidebar-page-container">
+  <div class="auto-container">
+    <div class="row clearfix">
+
+      <!-- Content Side -->
+      <div class="content-side col-lg-9 col-md-8 col-sm-12 col-xs-12">
+        {% if search_term %}
+        <div class="search-results-info">
+          <strong>Search Results for "{{ search_term }}"</strong> - {{ total_items }} item(s) found
+          <a href="/shop" class="pull-right" style="font-size: 14px;">Clear search</a>
+        </div>
+        {% endif %}
+        
+        <!-- Products Section -->
+        <section class="products-section no-padd-top">
+          <div class="shop-upper-box">
+            <div class="clearfix">
+              <div class="pull-left items-label">
+                Showing {{ items|length }} of {{ total_items }} Products
+              </div>
+              <div class="pull-right sort-by">
+                <strong>Sort By:</strong>
+                <select class="sort-select" onchange="sortProducts(this.value)">
+                  <option value="name_asc">Name: A to Z</option>
+                  <option value="name_desc">Name: Z to A</option>
+                  <option value="price_asc">Price: Low to High</option>
+                  <option value="price_desc">Price: High to Low</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {% if items %}
+          <div class="row clearfix" id="products-container">
+            {% for item in items %}
+            <div class="default-shop-item col-lg-4 col-md-6 col-sm-6 col-xs-12">
+              <div class="inner-box">
+                <figure class="image-box">
+                  <a href="/producte/product?name={{ item.name | urlencode }}" class="product-item md-height bg-gray d-block">
+                    <img src="{{ item.image or '/assets/whrt_whitelabel/webshop/images/default-product.jpg' }}"
+     alt="{{ item.item_name }}"
+     class="fixed-product-image" />
+                  </a>
+                </figure>
+
+                <div class="lower-content">
+                  <h3 class="product-title-truncate">
+                    <a href="/producte/product?name={{ item.name | urlencode }}">
+                      {{ item.highlighted_name | safe if item.highlighted_name else item.item_name }}
+                    </a>
+                  </h3>
+                  {% if item.highlighted_description %}
+                  <p class="product-description">{{ item.highlighted_description | safe }}</p>
+                  {% endif %}
+                  <div class="rating">
+                    {% for _ in range(5) %}
+                    <span class="fa fa-star"></span>
+                    {% endfor %}
+                  </div>
+                  <div class="price">₹{{ item.price | float | round(2) }}</div>
+                  <div class="links-box">
+                    <a href="javascript:void(0)" class="cart-btn add-to-cart-btn" 
+                       data-item="{{ item.name }}"
+                       data-name="{{ item.item_name }}" 
+                       data-image="{{ item.image }}"
+                       data-price="{{ item.price }}">Add to Cart</a>
+                    <a class="zoom-btn lightbox-image" href="{{ item.image or '#' }}">
+                      <span class="fa fa-search-plus" title="Quick View"></span>
+                    </a>
+                    <a class="add-to-favorite" href="#">
+                      <span class="fa fa-heart"></span>
+                    </a>
+                  </div>
+                </div>
+              </div>
+            </div>
+            {% endfor %}
+          </div>
+          
+          <!-- Pagination -->
+          {% if total_pages > 1 %}
+          <div class="pagination">
+            {% if current_page > 1 %}
+              <a href="{{ update_query_parameter('page', current_page-1) }}">&laquo; Previous</a>
+            {% endif %}
+            
+            {% for page_num in range(1, total_pages+1) %}
+              {% if page_num == current_page %}
+                <a href="#" class="active">{{ page_num }}</a>
+              {% else %}
+                <a href="{{ update_query_parameter('page', page_num) }}">{{ page_num }}</a>
+              {% endif %}
+            {% endfor %}
+            
+            {% if current_page < total_pages %}
+              <a href="{{ update_query_parameter('page', current_page+1) }}">Next &raquo;</a>
+            {% endif %}
+          </div>
+          {% endif %}
+          
+          {% else %}
+          <div class="no-results">
+            <div class="icon">
+              <span class="fa fa-search"></span>
+            </div>
+            <h3>No products found</h3>
+            <p>Try adjusting your search or filter criteria</p>
+            <a href="/shop" class="btn btn-primary">Browse All Products</a>
+          </div>
+          {% endif %}
+        </section>
+      </div>
+
+      <!-- Sidebar -->
+      <div class="sidebar-side col-lg-3 col-md-4 col-sm-12 col-xs-12">
+        <aside class="sidebar">
+
+          <!-- Search -->
+          <div class="widget search-box sidebar-widget">
+            <div class="search-form-container">
+              <form method="GET" action="/shop" id="search-form">
+                <div class="form-group" style="position: relative;">
+                  <input type="search" id="search-input" name="search" placeholder="Search product..." 
+                         value="{{ search_term or '' }}" autocomplete="off">
+                  <button type="submit"><span class="icon fa fa-search"></span></button>
+                  <div class="search-suggestions" id="search-suggestions"></div>
+                </div>
+                
+                {% if search_term %}
+                <div class="search-filters">
+                  <div style="margin-bottom: 8px;">
+                    <strong>Search in:</strong>
+                  </div>
+                  <div style="margin-bottom: 5px;">
+                    <input type="checkbox" id="filter-name" name="filter_name" checked>
+                    <label for="filter-name">Product Name</label>
+                  </div>
+                  <div style="margin-bottom: 5px;">
+                    <input type="checkbox" id="filter-description" name="filter_description">
+                    <label for="filter-description">Description</label>
+                  </div>
+                  <div>
+                    <input type="checkbox" id="filter-code" name="filter_code">
+                    <label for="filter-code">Product Code</label>
+                  </div>
+                </div>
+                {% endif %}
+              </form>
+            </div>
+          </div>
+
+          <!-- Categories -->
+          <div class="widget popular-categories sidebar-widget">
+            <div class="sidebar-title"><h3>Product Categories</h3></div>
+            <ul class="list-three">
+              {% for group in item_groups %}
+              <li>
+                <a href="{{ update_query_parameter('item_group', group.name) }}" 
+                   class="{% if selected_item_group == group.name %}active{% endif %}">
+                  {{ group.name }}
+                </a>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+
+          <!-- Brands -->
+          <div class="widget popular-categories sidebar-widget">
+            <div class="sidebar-title"><h3>Brands</h3></div>
+            <ul class="list-three">
+              {% for brand in brands %}
+              <li>
+                <a href="{{ update_query_parameter('brand', brand.name) }}"
+                   class="{% if selected_brand == brand.name %}active{% endif %}">
+                  {{ brand.name }}
+                </a>
+              </li>
+              {% endfor %}
+            </ul>
+          </div>
+
+          <!-- Latest Products -->
+          <div class="widget best-sellers sidebar-widget">
+            <div class="sidebar-title"><h3>Latest Products</h3></div>
+            {% for latest in items[:3] %}
+            <div class="item">
+              <div class="post-thumb">
+                <a href="/producte/product?name={{ latest.name | urlencode }}">
+                  <img src="{{ latest.image or '/assets/whrt_whitelabel/webshop/images/default-product.jpg' }}" alt="">
+                </a>
+              </div>
+              <h4><a href="/producte/product?name={{ latest.name | urlencode }}">{{ latest.item_name }}</a></h4>
+              <div class="item-price">₹{{ latest.price | float | round(2) }}</div>
+            </div>
+            {% endfor %}
+          </div>
+
+        </aside>
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block script %}
+<script>
+// Function to update query parameters in URL
+function updateQueryParameter(param, value) {
+    const url = new URL(window.location.href);
+    url.searchParams.set(param, value);
+    
+    // Reset to page 1 when changing filters
+    if (param !== 'page') {
+        url.searchParams.set('page', 1);
+    }
+    
+    return url.toString();
+}
+
+// JavaScript for search suggestions and enhancements
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('search-input');
+    const searchSuggestions = document.getElementById('search-suggestions');
+    const searchForm = document.getElementById('search-form');
+    
+    // Auto-suggest functionality
+    let timeoutId;
+    searchInput.addEventListener('input', function() {
+        clearTimeout(timeoutId);
+        const query = this.value.trim();
+        
+        if (query.length < 2) {
+            searchSuggestions.style.display = 'none';
+            return;
+        }
+        
+        timeoutId = setTimeout(() => {
+            // Show loading indicator
+            searchSuggestions.innerHTML = '<div style="padding: 10px; text-align: center;">Loading...</div>';
+            searchSuggestions.style.display = 'block';
+            
+            fetch(`/api/method/whrt_whitelabel.www.shop.get_search_suggestions?q=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message && data.message.length > 0) {
+                        searchSuggestions.innerHTML = '';
+                        data.message.forEach(item => {
+                            const div = document.createElement('div');
+                            div.className = 'search-suggestion';
+                            
+                            // Create suggestion content with image if available
+                            let content = `
+                                <img src="${item.image || '/assets/whrt_whitelabel/webshop/images/default-product.jpg'}" 
+                                     alt="${item.item_name}" onerror="this.src='/assets/whrt_whitelabel/webshop/images/default-product.jpg'">
+                                <span>${item.item_name}</span>
+                            `;
+                            
+                            div.innerHTML = content;
+                            div.addEventListener('click', () => {
+                                searchInput.value = item.item_name;
+                                searchSuggestions.style.display = 'none';
+                                searchForm.submit();
+                            });
+                            searchSuggestions.appendChild(div);
+                        });
+                    } else {
+                        searchSuggestions.innerHTML = '<div style="padding: 10px; text-align: center;">No suggestions found</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching suggestions:', error);
+                    searchSuggestions.innerHTML = '<div style="padding: 10px; text-align: center;">Error loading suggestions</div>';
+                });
+        }, 300);
+    });
+    
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!searchInput.contains(e.target) && !searchSuggestions.contains(e.target)) {
+            searchSuggestions.style.display = 'none';
+        }
+    });
+    
+    // Keyboard navigation for suggestions
+    searchInput.addEventListener('keydown', function(e) {
+        const suggestions = searchSuggestions.querySelectorAll('.search-suggestion');
+        const activeSuggestion = searchSuggestions.querySelector('.search-suggestion.active');
+        
+        if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            if (!activeSuggestion) {
+                suggestions[0]?.classList.add('active');
+            } else {
+                const next = activeSuggestion.nextElementSibling;
+                if (next) {
+                    activeSuggestion.classList.remove('active');
+                    next.classList.add('active');
+                }
+            }
+        } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            if (activeSuggestion) {
+                const prev = activeSuggestion.previousElementSibling;
+                if (prev) {
+                    activeSuggestion.classList.remove('active');
+                    prev.classList.add('active');
+                }
+            }
+        } else if (e.key === 'Enter' && activeSuggestion) {
+            e.preventDefault();
+            activeSuggestion.click();
+        }
+    });
+});
+
+// Function to sort products (placeholder for future implementation)
+function sortProducts(value) {
+    // This would typically redirect to a sorted URL or use AJAX
+    console.log('Sorting by:', value);
+    // window.location.href = updateQueryParameter('sort', value);
+}
+
+// Add to cart functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const addToCartButtons = document.querySelectorAll('.add-to-cart-btn');
+    
+    addToCartButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const itemCode = this.getAttribute('data-item');
+            const itemName = this.getAttribute('data-name');
+            const itemPrice = this.getAttribute('data-price');
+            
+            frappe.call({
+                method: "whrt_whitelabel.www.cart.add_to_cart",
+                args: {
+                    item_code: itemCode,
+                    qty: 1
+                },
+                callback: function(response) {
+                    if (response.message) {
+                        frappe.show_alert({
+                            message: `${itemName} added to cart`,
+                            indicator: 'green'
+                        });
+                        
+                        // Update cart count
+                        const cartCount = document.getElementById('cart-count');
+                        if (cartCount) {
+                            const currentCount = parseInt(cartCount.innerText) || 0;
+                            cartCount.innerText = currentCount + 1;
+                        }
+                    }
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "whrt_whitelabel/templates/basic.html" %}
+
+{% block title %}Invoice - {{ invoice.name }}{% endblock %}
+
+{% block content %}
+<section class="page-title" style="background-image:url('/assets/whrt_whitelabel/webshop/images/background/bg-page-title-1.jpg');">
+    <div class="auto-container">
+        <h1>Invoice {{ invoice.name }}</h1>
+    </div>
+</section>
+
+<section class="page-info">
+    <div class="auto-container">
+        <h3>Customer: {{ customer.customer_name }}</h3>
+        <p>Email: {{ customer.email_id or 'N/A' }}</p>
+        <p>Invoice Date: {{ invoice.posting_date }}</p>
+        <p>Status: {{ invoice.status }}</p>
+        <hr>
+        <h4>Items</h4>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Item</th>
+                    <th>Description</th>
+                    <th>Qty</th>
+                    <th>Rate</th>
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.item_code }}</td>
+                    <td>{{ item.description }}</td>
+                    <td>{{ item.qty }}</td>
+                    <td>₹{{ item.rate }}</td>
+                    <td>₹{{ item.amount }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% if taxes %}
+        <h4>Taxes</h4>
+        <ul>
+            {% for tax in taxes %}
+            <li>{{ tax.description }}: ₹{{ tax.tax_amount }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+
+        <h4 class="mt-4">Total: ₹{{ invoice.total }}</h4>
+        <h3>Grand Total: ₹{{ invoice.grand_total }}</h3>
+    </div>
+</section>
+{% endblock %}

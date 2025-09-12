@@ -3,9 +3,25 @@
 {% block head_include %}
   <link rel="stylesheet" href="{{ '/assets/whrt_whitelabel/css/whrt_whitelabel.css' }}">
 {% endblock %}
+{% block style %}
+<style>
+  header, footer {
+    display: none !important;
+  }
 
-{# 👇 Add this block to completely remove the navbar/header #}
-{% block navbar %}{% endblock %}
+  body {
+  background-color: #d9dfe6 !important; /* Light green tone */
+} 
+
+.web-footer {
+    background-color: rgb(198, 235, 197) !important;
+}
+.navbar-light{
+background-color: #485e9b !important;
+}
+
+</style>
+{% endblock %}
 
 {% block page_content %}
     {% macro logo_section(title=null) %}
@@ -93,29 +109,4 @@
     </script>
 {% endblock %}
 
-{% block footer %}
-<footer class="web-footer">
-    <div class="container">
-        <div class="footer-logo-extension">
-            <div class="row">
-                <div class="text-left col-md-6"></div>
-                <div class="text-right col-md-6"></div>
-            </div>
-        </div>
-        <div class="footer-links">
-            <div class="row">
-                <div class="footer-col-left col-sm-6"></div>
-                <div class="footer-col-right col-sm-6"></div>
-            </div>
-        </div>
-        <div class="footer-info">
-            <div class="row">
-                <div class="footer-col-left col-sm-6 col-12"></div>
-                <div class="footer-col-right col-sm-6 col-12 footer-powered">
-                    Powered by <a class="text-muted" href="https://whiteraystech.in/" target="_blank">White Rays Technology</a>
-                </div>
-            </div>
-        </div>
-    </div>
-</footer>
-{% endblock %}
+

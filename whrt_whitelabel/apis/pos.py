@@ -2,6 +2,7 @@ import frappe
 import json
 from frappe import _
 from frappe.utils import nowdate, now_datetime
+from frappe.utils.pdf import get_pdf
 
 
 
@@ -27,22 +28,33 @@ def get_pos_profiles_for_company(company):
 @frappe.whitelist()
 def get_pos_profile_details(pos_profile):
     profile = frappe.get_doc("POS Profile", pos_profile)
-    
+
     payment_methods = []
     for method in profile.payments:
         payment_methods.append({
             "mode_of_payment": method.mode_of_payment,
             "default": method.default
         })
-    
+
     if not payment_methods:
         frappe.throw("No payment methods configured for this POS Profile")
-    
+
+    # ✅ Handle item groups fallback
+    item_groups = [{"name": ig.item_group} for ig in profile.item_groups]
+    if not item_groups:
+        # Get all non-group item groups
+        item_groups = [{"name": name} for name in frappe.get_all(
+            "Item Group",
+            #filters={"is_group": 0},
+            pluck="name"
+        )]
+
     return {
         "payment_methods": payment_methods,
         "tax_template": profile.taxes_and_charges or "",
         "warehouse": profile.warehouse or "",
-        "item_groups": [{"name": ig.item_group} for ig in profile.item_groups]
+        "item_groups": item_groups,
+        "currency": profile.currency or frappe.defaults.get_global_default("currency")
     }
 @frappe.whitelist()
 def validate_pos_profile(profile_name):
@@ -466,3 +478,59 @@ def create_opening_entry(pos_profile, company, balance_details):
 	except Exception as e:
 		frappe.log_error(f"Create Opening Entry Error: {str(e)}")
 		return {"error": str(e)}
+
+
+@frappe.whitelist()
+def print_receipt(invoice_id):
+    if not invoice_id:
+        return "Missing invoice ID"
+
+    try:
+        # Fetch the POS Invoice
+        doc = frappe.get_doc("POS Invoice", invoice_id)
+
+        # Render HTML using a specific print format or default
+        html = frappe.get_print(
+            "POS Invoice",
+            invoice_id,
+            print_format="POS Invoice" if frappe.db.exists("Print Format", "POS Invoice") else "Standard",
+            as_pdf=False,
+        )
+        return html
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "print_receipt error")
+        return f"<pre>{str(e)}</pre>"
+
+
+@frappe.whitelist()
+def get_customer_summary(customer_id):
+    if not customer_id:
+        return {"error": "Missing customer ID"}
+
+    try:
+        customer = frappe.get_doc("Customer", customer_id)
+
+        invoices = frappe.get_all("POS Invoice",
+            filters={"customer": customer.name, "docstatus": 1},
+            fields=["name", "posting_date", "grand_total", "outstanding_amount"],
+            order_by="posting_date desc",
+            limit=5
+        )
+
+        total_orders = frappe.db.count("POS Invoice", {"customer": customer.name, "docstatus": 1})
+        total_spent = sum(inv.grand_total for inv in invoices)
+        last_invoice = invoices[0] if invoices else {}
+
+        return {
+            "name": customer.name,
+            "customer_name": customer.customer_name,
+            "total_orders": total_orders,
+            "last_invoice": last_invoice,
+            "recent_invoices": invoices,
+            "outstanding_balance": sum(inv.outstanding_amount for inv in invoices),
+        }
+
+    except Exception as e:
+        frappe.log_error(frappe.get_traceback(), "POS Customer Summary Error")
+        return {"error": str(e)}
+

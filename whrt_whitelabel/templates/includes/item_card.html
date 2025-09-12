@@ -1,0 +1,13 @@
+<div class="product-card">
+  <a href="/{{ item.website_route }}">
+    <img src="{{ item.website_image }}" alt="{{ item.item_name }}" class="product-img">
+    <div class="product-content">
+      <span class="product-category">Category</span>
+      <h3 class="product-title">{{ item.item_name }}</h3>
+      <div class="product-price">
+        <span class="current-price">₹{{ item.price_list_rate }}</span>
+      </div>
+      <button class="add-to-cart"><i class="fas fa-shopping-cart"></i> Add to Cart</button>
+    </div>
+  </a>
+</div>

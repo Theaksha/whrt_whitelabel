@@ -1,0 +1,217 @@
+<!-- Main Header-->
+<header class="main-header">
+    <!-- Header Top -->
+    <div class="header-top">
+        <div class="auto-container">
+            <div class="row clearfix">
+                <!--Top Left-->
+                <div class="top-left pull-left">
+                    <div class="dropdown lang-dropdown">
+                        <button class="btn btn-primary dropdown-toggle" type="button" data-toggle="dropdown">
+                            <img src="/assets/whrt_whitelabel/webshop/images/icons/flog.png" alt="" /> &nbsp; English 
+                            <span class="fa fa-angle-down"></span>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a href="#">French</a></li>
+                            <li><a href="#">Espanish</a></li>
+                            <li><a href="#">Chinese</a></li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!--Top Right-->
+                <div class="top-right pull-right">
+                    <!--social-icon-->
+                    <div class="social-icon">
+                        <a href="#"><span class="fa fa-facebook"></span></a>
+                        <a href="#"><span class="fa fa-twitter"></span></a>
+                        <a href="#"><span class="fa fa-dribbble"></span></a>
+                        <a href="#"><span class="fa fa-linkedin"></span></a>
+                    </div>
+                    
+                    <ul>
+                        <li><span class="fa fa-envelope-o"></span>Contact@Decorators.com</li>
+                        <li><span class="fa fa-phone"></span>Toll Free: +1 212-212-2376</li>
+                        <li><span class="fa fa-clock-o"></span>Mon - Fri : 9:00 -1700</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div><!-- Header Top End -->
+    
+    <!-- Main Box -->
+    <div class="main-box">
+        <div class="auto-container">
+            <div class="outer-container clearfix">
+                <!--Logo Box-->
+                <div class="logo-box">
+                    <div class="logo"><a href="/main-page"><img src="/assets/whrt_whitelabel/webshop/images/logo.png" alt=""></a></div>
+                </div>
+                
+                <!--Nav Outer-->
+                <div class="nav-outer clearfix">
+                    <!-- Main Menu -->
+                    <nav class="main-menu">
+                        <div class="navbar-header">
+                            <!-- Toggle Button -->    	
+                            <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+                                <span class="icon-bar"></span>
+                                <span class="icon-bar"></span>
+                                <span class="icon-bar"></span>
+                            </button>
+                        </div>
+                        
+                        <div class="navbar-collapse collapse clearfix">
+                            <ul class="navigation clearfix">
+                                <li class="current"><a href="/main-page">Home</a></li>
+                                
+                                <li class="dropdown"><a href="#">Shop</a>
+                                    <ul>
+                                        <li><a href="/shop">Shop Products</a></li>
+                                        <li><a href="/shop-single">Shop Single</a></li>
+                                        <li><a href="/cart">Shopping Cart</a></li>
+                                        <li><a href="/checkout">Checkout</a></li>
+                                    </ul>
+                                </li>
+                                
+                                <li class="dropdown"><a href="#">Pages</a>
+                                    <ul>
+                                        <li><a href="/about-us">About Us</a></li>
+                                        <li><a href="/our-team">Our Team</a></li>
+                                        <li><a href="/pricing">Pricing Table</a></li>
+                                        <li><a href="/faqs">FAQ's</a></li>
+                                    </ul>
+                                </li>
+                                
+                                <li><a href="/contact">Contact</a></li>
+                            </ul>
+                        </div>
+                    </nav><!-- Main Menu End-->
+                </div><!--Nav Outer End-->
+                
+                <!-- Right Side Container -->
+                <div class="right-side-container clearfix">
+                    <!-- User Account Section -->
+                    <div class="user-account-container">
+                        {% if frappe.session.user != "Guest" %}
+                        <div class="user-account dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                <img src="{{ user_image or '/assets/frappe/images/avatar.png' }}" class="user-avatar" alt="User Avatar">
+                                {{ user_full_name or frappe.session.user }}
+                                <span class="fa fa-angle-down"></span>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a href="/me"><i class="fa fa-user"></i> My Account</a></li>
+                                <li><a href="/orders"><i class="fa fa-list"></i> My Orders</a></li>
+                                <li><a href="/login"><i class="fa fa-sign-out"></i> Logout</a></li>
+                            </ul>
+                        </div>
+                        {% else %}
+                        <div class="user-account">
+                            <a href="/login"><i class="fa fa-sign-in"></i> Login</a>
+                            <span> | </span>
+                            <a href="/signup">Register</a>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Cart Icon -->
+                    <div class="cart-btn-outer">
+                        <a href="/cart">
+                            <div class="icon">
+                                <span class="flaticon-shopping-bag"></span>
+                                <span class="count" id="cart-count">{{ frappe.utils.flt(cart_count) or 0 }}</span>
+                            </div>
+                        </a>
+                    </div>
+                    
+                    <!-- Search Button -->
+                    <div class="header-search-icon search-box-btn"><span class="flaticon-search"></span></div>
+                    
+                    <!-- Hidden Nav Toggler -->
+                    <div class="nav-toggler">
+                        <button class="hidden-bar-opener"><span class="icon fa fa-bars"></span></button>
+                    </div><!-- / Hidden Nav Toggler -->
+                </div>
+            </div>    
+        </div>
+    </div>
+</header>
+<!--End Main Header -->
+
+<!-- Hidden Navigation Bar -->
+<section class="hidden-bar right-align">
+    <div class="hidden-bar-closer">
+        <button class="btn"><i class="fa fa-close"></i></button>
+    </div>
+    
+    <!-- Hidden Bar Wrapper -->
+    <div class="hidden-bar-wrapper">
+        <!-- .logo -->
+        <div class="logo text-center">
+            <a href="/main-page"><img src="/assets/whrt_whitelabel/webshop/images/logo-2.png" alt=""></a>			
+        </div><!-- /.logo -->
+        
+        <!-- .Side-menu -->
+        <div class="side-menu">
+            <!-- .navigation -->
+            <ul class="navigation">
+                <li class="current"><a href="/main-page">Home</a></li>
+                
+                <li class="dropdown"><a href="#">Shop</a>
+                    <ul class="submenu">
+                        <li><a href="/shop">Shop Products</a></li>
+                        <li><a href="/cart">Shopping Cart</a></li>
+                        <li><a href="/checkout">Checkout</a></li>
+                        {% if frappe.session.user == "Guest" %}
+                        <li><a href="/login">Login / Register</a></li>
+                        {% endif %}
+                    </ul>
+                </li>
+                
+                <li class="dropdown"><a href="#">Pages</a>
+                    <ul class="submenu">
+                        <li><a href="/about-us">About Us</a></li>
+                        <li><a href="/our-team">Our Team</a></li>
+                        <li><a href="/pricing">Pricing Table</a></li>
+                        <li><a href="/faqs">FAQ's</a></li>
+                    </ul>
+                </li>
+                
+                <li><a href="/contact">Contact</a></li>
+                
+                {% if frappe.session.user != "Guest" %}
+                <li class="dropdown"><a href="#">My Account</a>
+                    <ul class="submenu">
+                        <li><a href="/me">My Profile</a></li>
+                        <li><a href="/orders">My Orders</a></li>
+                        <li><a href="/login">Logout</a></li>
+                    </ul>
+                </li>
+                {% else %}
+                <li><a href="/login">Login</a></li>
+                <li><a href="/signup">Register</a></li>
+                {% endif %}
+            </ul>
+        </div><!-- /.Side-menu -->
+    
+        <div class="social-icons">
+            <ul>
+                <li><a href="#"><i class="fa fa-facebook"></i></a></li>
+                <li><a href="#"><i class="fa fa-twitter"></i></a></li>
+                <li><a href="#"><i class="fa fa-google-plus"></i></a></li>
+                <li><a href="#"><i class="fa fa-linkedin"></i></a></li>
+            </ul>
+        </div>
+    </div><!-- / Hidden Bar Wrapper -->
+</section>
+
+<script>
+// Function to update cart count (if you have dynamic cart functionality)
+function updateCartCount(count) {
+    document.getElementById('cart-count').innerText = count;
+}
+
+// You can call this function when the cart changes
+// Example: updateCartCount(5);
+</script>

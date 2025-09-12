@@ -6,9 +6,18 @@ for-login .page-card, .for-forgot .page-card, .for-login-with-email-link .page-c
     border-radius: var(--border-radius-md);
     border: 1px solid var(--border-color);
 }
+
+body.login {
+  background-color: #f5f5f5; /* or any hex code or rgba() value */
+}
+
 .navbar-light {
     border-bottom: 1px solid rgb(226, 226, 226);
     background: #000000 !important;
+}
+
+.widget.onboarding-widget-box {
+    display:none;
 }
 
 
@@ -206,9 +215,6 @@ li.dropdown.dropdown.dropdown-help.dropdown-mobile {
     background-color: #333333;
 }
  
-.ellipsis{
-    color: rgb(59, 84, 53);
-}
  
 .app-logo {
     border-radius: 6px;

@@ -106,10 +106,16 @@ export class CustomerSelector {
   }
 
   _select(id, label) {
-    this.$input.val(label);
-    this.ctrl.selected_customer = { id, label };
-    this.$dropdown.hide();
-  }
+  const selected = this.customers.find(c => c.name === id);
+  this.$input.val(label);
+  this.ctrl.selected_customer = {
+    id: selected?.name || id,
+    name: selected?.customer_name || label,
+    ...selected  // store full object for future use
+  };
+  this.$dropdown.hide();
+}
+
 
   _addCustomer() {
     const name = this.$input.val().trim() || 'New Customer';
